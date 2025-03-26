@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/cf8505c9-5534-43a4-9e4d-2b568162344e/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/book-vision-app",
+    "appService.deploySubpath": "."
+}
