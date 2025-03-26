@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Book Collection</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My Book Collection</h1>
+            <div class="actions">
+                <button id="scanBtn">Scan Bookshelf</button>
+                <input type="file" id="photoUpload" accept="image/*" style="display: none;">
+                <div id="status" class="status"></div>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by title or author...">
+            </div>
+            <div class="sort-options">
+                <label for="sortSelect">Sort by:</label>
+                <select id="sortSelect">
+                    <option value="title-asc">Title (A-Z)</option>
+                    <option value="title-desc">Title (Z-A)</option>
+                    <option value="author-asc">Author (A-Z)</option>
+                    <option value="author-desc">Author (Z-A)</option>
+                    <option value="date-desc">Date Added (Newest)</option>
+                    <option value="date-asc">Date Added (Oldest)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="book-loader" id="loader" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing your bookshelf image...</p>
+        </div>
+        
+        <main id="bookList" class="book-list">
+            <!-- Books will be populated here -->
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
