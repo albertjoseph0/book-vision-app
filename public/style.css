@@ -79,6 +79,33 @@ button:hover {
     color: white;
 }
 
+/* Google Auth Button */
+.auth-button {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    color: #757575;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-left: 15px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-button:hover {
+    background-color: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.auth-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+}
+
 .controls {
     display: flex;
     justify-content: space-between;
