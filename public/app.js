@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDiv = document.getElementById('status');
     const loader = document.getElementById('loader');
     
+    // Auth elements
+    const signInButton = document.getElementById('signInButton');
+    const userProfile = document.getElementById('userProfile');
+    const userName = document.getElementById('userName');
+    const profilePicture = document.getElementById('profilePicture');
+    
     // Data store
     let books = [];
     
@@ -17,8 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', filterBooks);
     sortSelect.addEventListener('change', sortBooks);
     
-    // Initialize - fetch books on page load
+    // Initialize - fetch books and check auth status on page load
     fetchBooks();
+    checkAuthStatus();
     
     // Functions
     async function fetchBooks() {
@@ -150,5 +157,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusDiv.className = 'status';
             }, 5000);
         }
+    }
+    
+    // Authentication functions
+    async function checkAuthStatus() {
+        try {
+            const response = await fetch('/.auth/me');
+            const authData = await response.json();
+            
+            // Check if user is authenticated (array has items)
+            if (authData && authData.length > 0) {
+                // User is authenticated - show profile
+                displayUserProfile(authData[0]);
+            } else {
+                // User is not authenticated - show sign in button
+                signInButton.style.display = 'flex';
+                userProfile.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error checking authentication status:', error);
+            // If there's an error, default to showing sign in button
+            signInButton.style.display = 'flex';
+            userProfile.style.display = 'none';
+        }
+    }
+    
+    function displayUserProfile(userData) {
+        // Hide sign in button and show profile
+        signInButton.style.display = 'none';
+        userProfile.style.display = 'flex';
+        
+        // Extract user info - properties depend on the provider (Google in this case)
+        // For Google, typical properties include: name, user_id, id_token, provider_name, user_claims
+        
+        // Set user name - look for various possible claim types
+        let displayName = findUserClaim(userData, 'name');
+        if (!displayName) {
+            // Fallbacks
+            displayName = findUserClaim(userData, 'given_name') || 
+                          findUserClaim(userData, 'email') || 
+                          'User';
+        }
+        
+        userName.textContent = displayName;
+        
+        // Try to get profile picture (if available)
+        const pictureUrl = findUserClaim(userData, 'picture');
+        if (pictureUrl) {
+            profilePicture.src = pictureUrl;
+            profilePicture.style.display = 'block';
+        } else {
+            // Use a default avatar or hide the image
+            profilePicture.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23bbb"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
+        }
+    }
+    
+    // Helper function to find a specific claim in the user data
+    function findUserClaim(userData, claimType) {
+        if (!userData || !userData.user_claims) return null;
+        
+        const claim = userData.user_claims.find(claim => 
+            claim.typ === claimType || 
+            claim.type === claimType
+        );
+        
+        return claim ? claim.val : null;
     }
 });
