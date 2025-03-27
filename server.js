@@ -184,7 +184,7 @@ function parseVisionResponse(responseData) {
 
 // API Routes
 
-// Get all books - UPDATED to filter by user_id when authenticated
+// Get all books - UPDATED to only show user's own books or anonymous books
 app.get('/books', async (req, res) => {
     try {
         const pool = await getDbPool();
@@ -193,26 +193,26 @@ app.get('/books', async (req, res) => {
         
         // Check if user is authenticated
         if (req.user && req.user.isAuthenticated) {
-            // Filter books by user_id
+            // Filter books to show ONLY books that belong to this user
             query = `
                 SELECT id, title, author, date_added 
                 FROM books 
-                WHERE user_id = @userId 
-                   OR user_id = 'anonymous' 
+                WHERE user_id = @userId
                 ORDER BY date_added DESC
             `;
             request.input('userId', sql.NVarChar, req.user.id);
             
-            console.log(`Fetching books for user: ${req.user.id}`);
+            console.log(`Fetching books for authenticated user: ${req.user.id}`);
         } else {
-            // For backward compatibility, return all books
+            // When not authenticated, only show anonymous books
             query = `
                 SELECT id, title, author, date_added 
                 FROM books 
+                WHERE user_id = 'anonymous'
                 ORDER BY date_added DESC
             `;
             
-            console.log('Fetching all books (unauthenticated request)');
+            console.log('Fetching only anonymous books (unauthenticated request)');
         }
         
         const result = await request.query(query);
