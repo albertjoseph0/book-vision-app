@@ -4,6 +4,8 @@ const multer = require('multer');
 const sql = require('mssql');
 const axios = require('axios');
 const path = require('path');
+// Add jsonwebtoken for decoding JWT tokens
+const jwt = require('jsonwebtoken');
 
 // Initialize Express app
 const app = express();
@@ -21,6 +23,55 @@ const upload = multer({
         }
     }
 });
+
+// Authentication middleware
+const extractUserIdentity = (req, res, next) => {
+    try {
+        // Get the Google ID token from request headers
+        const googleIdToken = req.headers['x-ms-token-google-id-token'];
+        
+        if (googleIdToken) {
+            // Decode the JWT token (without verification for now)
+            // In production, you should verify the token signature
+            const decodedToken = jwt.decode(googleIdToken);
+            
+            if (decodedToken) {
+                // Extract user information from token
+                req.user = {
+                    id: decodedToken.sub, // Google's unique user ID
+                    email: decodedToken.email,
+                    name: decodedToken.name,
+                    isAuthenticated: true
+                };
+                
+                // Log the extracted user info (for debugging)
+                console.log('Authenticated user:', req.user);
+            }
+        } else {
+            // Set a default user object for unauthenticated requests
+            req.user = {
+                id: 'anonymous',
+                isAuthenticated: false
+            };
+            
+            // Log unauthenticated request (for debugging)
+            console.log('Unauthenticated request');
+        }
+    } catch (error) {
+        console.error('Error extracting user identity:', error);
+        // Set default user for error cases
+        req.user = {
+            id: 'anonymous',
+            isAuthenticated: false
+        };
+    }
+    
+    // Always continue to the next middleware
+    next();
+};
+
+// Apply the authentication middleware to all routes
+app.use(extractUserIdentity);
 
 // Set landing page as the default route
 app.get('/', (req, res) => {
@@ -141,7 +192,7 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
         
         // Call OpenAI Vision API
         const response = await axios.post(OPENAI_API_URL, {
-            model: "gpt-4-vision-preview", // Use the latest vision model
+            model: "gpt-4o", // Use the latest vision model
             messages: [
                 {
                     role: "user",
