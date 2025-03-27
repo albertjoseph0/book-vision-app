@@ -22,7 +22,17 @@ const upload = multer({
     }
 });
 
-// Serve static files
+// Set landing page as the default route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+// Route for the main app after clicking 'Get Started' or any CTA button
+app.get('/app', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve static files - moved after route definitions
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Database configuration
