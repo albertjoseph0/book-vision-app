@@ -27,13 +27,55 @@ document.addEventListener('DOMContentLoaded', () => {
     sortSelect.addEventListener('change', sortBooks);
     
     // Initialize - fetch books and check auth status on page load
-    fetchBooks();
-    checkAuthStatus();
+    checkAuthStatus()
+        .then(isAuthenticated => {
+            if (isAuthenticated) {
+                fetchBooks();
+            } else {
+                // Redirect to auth if not authenticated
+                window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+            }
+        });
     
     // Functions
+    async function checkAuthStatus() {
+        try {
+            // Check authentication status via server endpoint
+            const response = await fetch('/auth/status');
+            if (!response.ok) throw new Error('Auth check failed');
+            
+            const authData = await response.json();
+            
+            // Process authentication data
+            if (authData.isAuthenticated && authData.userData) {
+                // User is authenticated - show profile
+                displayUserProfile(authData.userData);
+                return true;
+            } else {
+                // User is not authenticated - show sign in button
+                signInButton.style.display = 'flex';
+                userProfile.style.display = 'none';
+                return false;
+            }
+        } catch (error) {
+            console.error('Error checking authentication status:', error);
+            // If there's an error, default to showing sign in button
+            signInButton.style.display = 'flex';
+            userProfile.style.display = 'none';
+            return false;
+        }
+    }
+    
     async function fetchBooks() {
         try {
             const response = await fetch('/books');
+            
+            // If unauthorized, redirect to auth
+            if (response.status === 401) {
+                window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+                return;
+            }
+            
             if (!response.ok) throw new Error('Failed to fetch books');
             
             books = await response.json();
@@ -62,6 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData
             });
+            
+            // If unauthorized, redirect to auth
+            if (response.status === 401) {
+                window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+                return;
+            }
             
             const result = await response.json();
             
@@ -171,36 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Authentication functions
-    async function checkAuthStatus() {
-        try {
-            const response = await fetch('/.auth/me');
-            const authData = await response.json();
-            
-            // Check if user is authenticated (array has items)
-            if (authData && authData.length > 0) {
-                // User is authenticated - show profile
-                displayUserProfile(authData[0]);
-            } else {
-                // User is not authenticated - show sign in button
-                signInButton.style.display = 'flex';
-                userProfile.style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Error checking authentication status:', error);
-            // If there's an error, default to showing sign in button
-            signInButton.style.display = 'flex';
-            userProfile.style.display = 'none';
-        }
-    }
-    
     function displayUserProfile(userData) {
         // Hide sign in button and show profile
         signInButton.style.display = 'none';
         userProfile.style.display = 'flex';
         
         // Extract user info - properties depend on the provider (Google in this case)
-        // For Google, typical properties include: name, user_id, id_token, provider_name, user_claims
         
         // Set user name - look for various possible claim types
         let displayName = findUserClaim(userData, 'name');
@@ -208,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fallbacks
             displayName = findUserClaim(userData, 'given_name') || 
                           findUserClaim(userData, 'email') || 
+                          findUserClaim(userData, 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress') ||
                           'User';
         }
         
@@ -294,6 +319,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/books/${bookId}`, {
                 method: 'DELETE'
             });
+            
+            // Handle authentication issues
+            if (response.status === 401) {
+                window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+                return;
+            }
             
             if (!response.ok) {
                 const errorData = await response.json();

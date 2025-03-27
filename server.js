@@ -22,17 +22,66 @@ const upload = multer({
     }
 });
 
+// Authentication middleware
+const requireAuth = async (req, res, next) => {
+    try {
+        // Forward the request to the built-in /.auth/me endpoint
+        const response = await axios.get(`${req.protocol}://${req.get('host')}/.auth/me`, {
+            headers: req.headers // Forward headers including auth cookies
+        });
+        
+        const authData = response.data;
+        
+        // Check if user is authenticated (array has items)
+        if (authData && authData.length > 0) {
+            // Add auth data to request object for later use
+            req.user = authData[0];
+            return next(); // User is authenticated, proceed
+        } else {
+            // User is not authenticated, redirect to auth
+            return res.redirect('/.auth/login/google?post_login_redirect_uri=/app');
+        }
+    } catch (error) {
+        console.error('Authentication check failed:', error);
+        return res.redirect('/.auth/login/google?post_login_redirect_uri=/app');
+    }
+};
+
 // Set landing page as the default route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
-// Route for the main app after clicking 'Get Started' or any CTA button
-app.get('/app', (req, res) => {
+// Auth status check endpoint
+app.get('/auth/status', async (req, res) => {
+    try {
+        // Forward request to Azure's auth endpoint
+        const response = await axios.get(`${req.protocol}://${req.get('host')}/.auth/me`, {
+            headers: req.headers
+        });
+        
+        const isAuthenticated = response.data && response.data.length > 0;
+        res.json({ 
+            isAuthenticated, 
+            userData: isAuthenticated ? response.data[0] : null 
+        });
+    } catch (error) {
+        console.error('Auth status check failed:', error);
+        res.status(401).json({ isAuthenticated: false, error: 'Authentication check failed' });
+    }
+});
+
+// Route for the main app - requires authentication
+app.get('/app', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve static files - moved after route definitions
+// API endpoint to get current user data
+app.get('/api/user', requireAuth, (req, res) => {
+    res.json(req.user);
+});
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Database configuration
@@ -88,10 +137,10 @@ function parseVisionResponse(responseData) {
     }
 }
 
-// API Routes
+// API Routes - All protected with authentication
 
 // Get all books
-app.get('/books', async (req, res) => {
+app.get('/books', requireAuth, async (req, res) => {
     try {
         const pool = await getDbPool();
         const result = await pool.request()
@@ -105,7 +154,7 @@ app.get('/books', async (req, res) => {
 });
 
 // Delete a book
-app.delete('/books/:id', async (req, res) => {
+app.delete('/books/:id', requireAuth, async (req, res) => {
     const bookId = req.params.id;
     
     if (!bookId) {
@@ -130,7 +179,7 @@ app.delete('/books/:id', async (req, res) => {
 });
 
 // Scan and process bookshelf photo
-app.post('/scan', upload.single('photo'), async (req, res) => {
+app.post('/scan', requireAuth, upload.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No photo uploaded' });
     }
