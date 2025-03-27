@@ -37,77 +37,44 @@ const dbConfig = {
     }
 };
 
+// OpenAI API configuration
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
 // Connect to database and return a pool
 async function getDbPool() {
     try {
-        const pool = await sql.connect(dbConfig);
-        console.log('Database connected successfully');
-        return pool;
+        return await sql.connect(dbConfig);
     } catch (err) {
         console.error('Database connection error:', err);
         throw new Error('Failed to connect to database');
     }
 }
 
-// OpenAI API service for book detection
-async function detectBooksInImage(base64Image) {
+// Helper function to parse OpenAI Vision API response
+function parseVisionResponse(responseData) {
     try {
-        console.log('Calling OpenAI API...');
+        // Extract the text content from the response
+        const content = responseData.choices[0].message.content;
         
-        // Call OpenAI Vision API directly with environment variable
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: "Identify all book titles and authors visible on the book spines in this bookshelf image. Return a JSON array with objects containing only 'title' and 'author' for each book you can identify. Focus only on clearly readable text on the spines."
-                            },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: `data:image/jpeg;base64,${base64Image}`
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 1000
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                }
-            }
-        );
+        // Pattern to match books (adjust based on actual response format)
+        // This assumes the Vision API returns text with "Title: X, Author: Y" format
+        const bookPattern = /Title:\s*([^,;\n]+)[,;\n]\s*Author:\s*([^,;\n]+)/gi;
         
-        console.log('OpenAI API response received');
+        const books = [];
+        let match;
         
-        // Parse the response to extract book data
-        const content = response.data.choices[0].message.content;
-        console.log('OpenAI content response:', content.substring(0, 100) + '...');
-        
-        // Extract JSON array from the response content
-        // This handles cases where the API might return extra text surrounding the JSON
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        let booksData = [];
-        
-        if (jsonMatch) {
-            booksData = JSON.parse(jsonMatch[0]);
-            console.log('Parsed books data successfully');
-        } else {
-            throw new Error('Could not parse JSON response from OpenAI');
+        while (match = bookPattern.exec(content)) {
+            books.push({
+                title: match[1].trim(),
+                author: match[2].trim()
+            });
         }
         
-        return booksData;
+        return books;
     } catch (error) {
-        console.error('OpenAI API error:', error.message);
-        throw new Error(`Failed to process image with OpenAI: ${error.message}`);
+        console.error('Error parsing Vision API response:', error);
+        return [];
     }
 }
 
@@ -127,6 +94,31 @@ app.get('/books', async (req, res) => {
     }
 });
 
+// Delete a book
+app.delete('/books/:id', async (req, res) => {
+    const bookId = req.params.id;
+    
+    if (!bookId) {
+        return res.status(400).json({ message: 'Book ID is required' });
+    }
+    
+    try {
+        const pool = await getDbPool();
+        const result = await pool.request()
+            .input('id', sql.Int, bookId)
+            .query('DELETE FROM books WHERE id = @id');
+        
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+        
+        res.status(200).json({ message: 'Book deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting book:', error);
+        res.status(500).json({ message: 'Error deleting book' });
+    }
+});
+
 // Scan and process bookshelf photo
 app.post('/scan', upload.single('photo'), async (req, res) => {
     if (!req.file) {
@@ -137,8 +129,36 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
         // Convert image buffer to base64
         const base64Image = req.file.buffer.toString('base64');
         
-        // Call our book detection function
-        const books = await detectBooksInImage(base64Image);
+        // Call OpenAI Vision API
+        const response = await axios.post(OPENAI_API_URL, {
+            model: "gpt-4-vision-preview", // Use the latest vision model
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Identify all books visible in this image. For each book, return the title and author in this format: Title: [Book Title], Author: [Author Name]. Only include books you can clearly see and identify."
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${base64Image}`
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 1000
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            }
+        });
+        
+        // Parse the response to extract book information
+        const books = parseVisionResponse(response.data);
         
         if (books.length === 0) {
             return res.status(200).json({ message: 'No books detected in the image', added: 0 });

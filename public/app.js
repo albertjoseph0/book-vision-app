@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const userName = document.getElementById('userName');
     const profilePicture = document.getElementById('profilePicture');
     
+    // For modal dialog
+    let confirmationModal = null;
+    
     // Data store
     let books = [];
     
@@ -133,14 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
         booksToRender.forEach(book => {
             const bookCard = document.createElement('div');
             bookCard.className = 'book-card';
+            bookCard.dataset.id = book.id; // Store book ID in dataset for deletion
             
             const dateAdded = new Date(book.date_added).toLocaleDateString();
             
             bookCard.innerHTML = `
+                <button class="delete-btn" data-id="${book.id}">✕</button>
                 <h3 class="book-title">${book.title}</h3>
                 <div class="book-author">by ${book.author}</div>
                 <div class="book-date">Added on ${dateAdded}</div>
             `;
+            
+            // Add event listener to the delete button
+            const deleteBtn = bookCard.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                confirmDeleteBook(book.id, book.title);
+            });
             
             bookList.appendChild(bookCard);
         });
@@ -222,5 +234,92 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         
         return claim ? claim.val : null;
+    }
+    
+    // Book deletion functions
+    function confirmDeleteBook(bookId, bookTitle) {
+        // Create modal if it doesn't exist
+        if (!confirmationModal) {
+            confirmationModal = document.createElement('div');
+            confirmationModal.className = 'modal-overlay';
+            document.body.appendChild(confirmationModal);
+        }
+        
+        // Set modal content
+        confirmationModal.innerHTML = `
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Confirm Deletion</h3>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "<strong>${bookTitle}</strong>"?</p>
+                    <p>This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">Cancel</button>
+                    <button class="btn-confirm">Delete</button>
+                </div>
+            </div>
+        `;
+        
+        // Show modal
+        confirmationModal.style.display = 'flex';
+        
+        // Add event listeners
+        const cancelBtn = confirmationModal.querySelector('.btn-cancel');
+        const confirmBtn = confirmationModal.querySelector('.btn-confirm');
+        
+        cancelBtn.addEventListener('click', closeModal);
+        
+        confirmBtn.addEventListener('click', () => {
+            deleteBook(bookId);
+            closeModal();
+        });
+        
+        // Close modal when clicking outside
+        confirmationModal.addEventListener('click', (e) => {
+            if (e.target === confirmationModal) {
+                closeModal();
+            }
+        });
+        
+        // Helper function to close modal
+        function closeModal() {
+            confirmationModal.style.display = 'none';
+        }
+    }
+    
+    async function deleteBook(bookId) {
+        try {
+            const response = await fetch(`/books/${bookId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to delete book');
+            }
+            
+            // Remove book from data store
+            books = books.filter(book => book.id !== bookId);
+            
+            // Remove book card from UI
+            const bookCard = document.querySelector(`.book-card[data-id="${bookId}"]`);
+            if (bookCard) {
+                bookCard.remove();
+            }
+            
+            // Show success message
+            showStatus('Book deleted successfully', 'success');
+            
+            // If no books left, show the "no books" message
+            if (books.length === 0) {
+                bookList.innerHTML = '<div class="no-books">No books found. Try scanning your bookshelf!</div>';
+            }
+            
+        } catch (error) {
+            console.error('Error deleting book:', error);
+            showStatus(error.message || 'Error deleting book', 'error');
+        }
     }
 });
