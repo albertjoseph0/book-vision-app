@@ -115,24 +115,67 @@ async function getDbPool() {
 // Helper function to parse OpenAI Vision API response
 function parseVisionResponse(responseData) {
     try {
-        // Extract the text content from the response
-        const content = responseData.choices[0].message.content;
-        
-        // Pattern to match books (adjust based on actual response format)
-        // This assumes the Vision API returns text with "Title: X, Author: Y" format
-        const bookPattern = /Title:\s*([^,;\n]+)[,;\n]\s*Author:\s*([^,;\n]+)/gi;
-        
-        const books = [];
-        let match;
-        
-        while (match = bookPattern.exec(content)) {
-            books.push({
-                title: match[1].trim(),
-                author: match[2].trim()
-            });
+        // Make sure we have a response with content
+        if (!responseData?.choices?.[0]?.message?.content) {
+            console.error('Invalid response format from Vision API');
+            return [];
         }
         
-        return books;
+        // Extract the content from the response
+        const content = responseData.choices[0].message.content;
+        
+        // Since we requested JSON format, try to parse the content as JSON
+        let books = [];
+        
+        try {
+            // Parse the JSON string from the content
+            const parsedContent = JSON.parse(content);
+            
+            // Check if the response contains a books array
+            if (Array.isArray(parsedContent.books)) {
+                books = parsedContent.books;
+            } 
+            // Or if the response itself is an array
+            else if (Array.isArray(parsedContent)) {
+                books = parsedContent;
+            }
+            
+            // Filter to ensure each book has both title and author
+            books = books.filter(book => 
+                book && 
+                typeof book === 'object' && 
+                typeof book.title === 'string' && 
+                typeof book.author === 'string' &&
+                book.title.trim() !== '' && 
+                book.author.trim() !== ''
+            );
+            
+            // Standardize the format to ensure only title and author are included
+            books = books.map(book => ({
+                title: book.title.trim(),
+                author: book.author.trim()
+            }));
+            
+            // Remove duplicates
+            const uniqueBooks = [];
+            const seen = new Set();
+            
+            for (const book of books) {
+                const key = `${book.title.toLowerCase()}|${book.author.toLowerCase()}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueBooks.push(book);
+                }
+            }
+            
+            return uniqueBooks;
+            
+        } catch (jsonError) {
+            console.error('Failed to parse JSON from Vision API response:', jsonError);
+            console.log('Raw content received:', content);
+            // Return empty array if JSON parsing fails
+            return [];
+        }
     } catch (error) {
         console.error('Error parsing Vision API response:', error);
         return [];
@@ -141,14 +184,40 @@ function parseVisionResponse(responseData) {
 
 // API Routes
 
-// Get all books
+// Get all books - UPDATED to filter by user_id when authenticated
 app.get('/books', async (req, res) => {
     try {
         const pool = await getDbPool();
-        const result = await pool.request()
-            .query('SELECT id, title, author, date_added FROM books ORDER BY date_added DESC');
+        let query = '';
+        let request = pool.request();
         
+        // Check if user is authenticated
+        if (req.user && req.user.isAuthenticated) {
+            // Filter books by user_id
+            query = `
+                SELECT id, title, author, date_added 
+                FROM books 
+                WHERE user_id = @userId 
+                   OR user_id = 'anonymous' 
+                ORDER BY date_added DESC
+            `;
+            request.input('userId', sql.NVarChar, req.user.id);
+            
+            console.log(`Fetching books for user: ${req.user.id}`);
+        } else {
+            // For backward compatibility, return all books
+            query = `
+                SELECT id, title, author, date_added 
+                FROM books 
+                ORDER BY date_added DESC
+            `;
+            
+            console.log('Fetching all books (unauthenticated request)');
+        }
+        
+        const result = await request.query(query);
         res.json(result.recordset);
+        
     } catch (error) {
         console.error('Error fetching books:', error);
         res.status(500).json({ message: 'Error fetching books' });
@@ -199,7 +268,7 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
                     content: [
                         {
                             type: "text",
-                            text: "Identify all books visible in this image. For each book, return the title and author in this format: Title: [Book Title], Author: [Author Name]. Only include books you can clearly see and identify."
+                            text: "Identify all books visible in this image. Return the result as a JSON array of objects, where each object contains ONLY 'title' and 'author' properties. Example format: [{\"title\": \"The Great Gatsby\", \"author\": \"F. Scott Fitzgerald\"}]. Only include books you can clearly see and identify."
                         },
                         {
                             type: "image_url",
@@ -210,7 +279,8 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
                     ]
                 }
             ],
-            max_tokens: 1000
+            max_tokens: 1000,
+            response_format: { type: "json_object" }
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -229,19 +299,29 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
         const pool = await getDbPool();
         let added = 0;
         
+        // Get user_id for this request (use 'anonymous' if not authenticated)
+        const userId = req.user && req.user.isAuthenticated ? req.user.id : 'anonymous';
+        
         for (const book of books) {
-            // Check if book already exists
+            // Skip invalid books (extra safety check)
+            if (!book.title || !book.author) {
+                continue;
+            }
+            
+            // Check if book already exists for this user
             const existsResult = await pool.request()
                 .input('title', sql.NVarChar, book.title)
                 .input('author', sql.NVarChar, book.author)
-                .query('SELECT COUNT(*) as count FROM books WHERE title = @title AND author = @author');
+                .input('userId', sql.NVarChar, userId)
+                .query('SELECT COUNT(*) as count FROM books WHERE title = @title AND author = @author AND user_id = @userId');
             
-            // If book doesn't exist, add it
+            // If book doesn't exist for this user, add it
             if (existsResult.recordset[0].count === 0) {
                 await pool.request()
                     .input('title', sql.NVarChar, book.title)
                     .input('author', sql.NVarChar, book.author)
-                    .query('INSERT INTO books (title, author, date_added) VALUES (@title, @author, GETDATE())');
+                    .input('userId', sql.NVarChar, userId)
+                    .query('INSERT INTO books (title, author, user_id, date_added) VALUES (@title, @author, @userId, GETDATE())');
                 
                 added++;
             }
