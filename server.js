@@ -224,7 +224,7 @@ app.get('/books', async (req, res) => {
     }
 });
 
-// Delete a book
+// Delete a book (secure version)
 app.delete('/books/:id', async (req, res) => {
     const bookId = req.params.id;
     
@@ -234,15 +234,25 @@ app.delete('/books/:id', async (req, res) => {
     
     try {
         const pool = await getDbPool();
-        const result = await pool.request()
-            .input('id', sql.Int, bookId)
-            .query('DELETE FROM books WHERE id = @id');
         
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ message: 'Book not found' });
+        // Get user_id from auth middleware
+        const userId = req.user && req.user.isAuthenticated ? req.user.id : 'anonymous';
+        
+        // Delete the book only if it belongs to this user
+        const deleteResult = await pool.request()
+            .input('id', sql.Int, bookId)
+            .input('userId', sql.NVarChar, userId)
+            .query('DELETE FROM books WHERE id = @id AND user_id = @userId');
+        
+        // Check if any rows were affected
+        if (deleteResult.rowsAffected[0] === 0) {
+            return res.status(403).json({ 
+                message: 'Book not found or you do not have permission to delete it'
+            });
         }
         
         res.status(200).json({ message: 'Book deleted successfully' });
+        
     } catch (error) {
         console.error('Error deleting book:', error);
         res.status(500).json({ message: 'Error deleting book' });
