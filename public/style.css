@@ -4,11 +4,23 @@
     padding: 0;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+    --dark-brown: #4A3F35;
+    --medium-brown: #704214;
+    --light-brown: #8B6B4C;
+    --aged-paper: #F2E9D8;
+    --gold: #D4AF37;
+    --shadow: rgba(0, 0, 0, 0.2);
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Playfair Display', Georgia, serif;
     line-height: 1.6;
-    color: #333;
-    background-color: #f9f9f9;
+    color: var(--dark-brown);
+    background-color: var(--aged-paper);
+    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
 }
 
 .container {
@@ -23,7 +35,19 @@ header {
     align-items: center;
     margin-bottom: 30px;
     padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 2px solid var(--medium-brown);
+    position: relative;
+}
+
+header:after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gold);
+    opacity: 0.6;
 }
 
 @media (max-width: 768px) {
@@ -44,7 +68,10 @@ header {
 }
 
 h1 {
-    color: #2c3e50;
+    color: var(--medium-brown);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
 }
 
 .actions {
@@ -53,41 +80,53 @@ h1 {
 }
 
 button {
-    background-color: #3498db;
-    color: white;
-    border: none;
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
     padding: 10px 15px;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
     font-size: 1rem;
-    transition: background-color 0.3s;
+    font-family: 'Playfair Display', serif;
+    transition: all 0.3s;
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 button:hover {
-    background-color: #2980b9;
+    background-color: var(--dark-brown);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 6px var(--shadow);
 }
 
 .status {
     margin-left: 15px;
     padding: 5px 10px;
-    border-radius: 4px;
+    border-radius: 0;
     font-size: 0.9rem;
+    font-style: italic;
 }
 
 .status.success {
-    background-color: #2ecc71;
-    color: white;
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
 }
 
 .status.error {
-    background-color: #e74c3c;
-    color: white;
+    background-color: #8B4513;
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
 }
 
 .controls {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    border: 1px solid var(--medium-brown);
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 3px 3px 6px var(--shadow);
 }
 
 @media (max-width: 600px) {
@@ -107,76 +146,112 @@ button:hover {
 .search-box input {
     width: 300px;
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--medium-brown);
+    border-radius: 0;
     font-size: 1rem;
+    font-family: 'Playfair Display', serif;
+    background-color: rgba(242, 233, 216, 0.8);
+    color: var(--dark-brown);
 }
 
 .sort-options select {
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid var(--medium-brown);
+    border-radius: 0;
     font-size: 1rem;
-    background-color: white;
+    font-family: 'Playfair Display', serif;
+    background-color: rgba(242, 233, 216, 0.8);
+    color: var(--dark-brown);
 }
 
 .book-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 30px;
 }
 
 .book-card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s;
+    background-color: var(--aged-paper);
+    border: 1px solid var(--medium-brown);
+    padding: 25px;
+    box-shadow: 4px 4px 8px var(--shadow);
+    transition: all 0.4s;
     position: relative;
+    background-image: url("https://www.transparenttextures.com/patterns/vintage-concrete.png");
+    overflow: hidden;
+}
+
+.book-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
+}
+
+.book-card:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
 }
 
 .book-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-10px) rotateZ(-1deg);
+    box-shadow: 8px 8px 12px var(--shadow);
 }
 
 .delete-btn {
     position: absolute;
     top: 10px;
     right: 10px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: #e74c3c;
-    color: white;
+    width: 26px;
+    height: 26px;
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 14px;
     line-height: 1;
-    border: none;
-    transition: background-color 0.2s, transform 0.2s;
+    border: 1px solid var(--gold);
+    transition: all 0.3s;
 }
 
 .delete-btn:hover {
-    background-color: #c0392b;
+    background-color: #8B4513;
     transform: scale(1.1);
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 .book-title {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-    color: #2c3e50;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    color: var(--medium-brown);
+    font-weight: 700;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 8px;
+    font-style: italic;
 }
 
 .book-author {
-    color: #7f8c8d;
+    color: var(--dark-brown);
     margin-bottom: 12px;
+    font-size: 1.1rem;
 }
 
 .book-date {
-    font-size: 0.8rem;
-    color: #95a5a6;
+    font-size: 0.9rem;
+    color: var(--light-brown);
+    font-style: italic;
 }
 
 .book-loader {
@@ -185,13 +260,14 @@ button:hover {
 }
 
 .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
+    border: 4px solid rgba(74, 63, 53, 0.2);
     border-radius: 50%;
-    border-top: 4px solid #3498db;
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 15px;
-    animation: spin 1s linear infinite;
+    border-top: 4px solid var(--medium-brown);
+    border-right: 4px solid var(--gold);
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 20px;
+    animation: spin 1.2s linear infinite;
 }
 
 @keyframes spin {
@@ -203,7 +279,14 @@ button:hover {
     text-align: center;
     padding: 40px 0;
     grid-column: 1 / -1;
-    color: #7f8c8d;
+    color: var(--medium-brown);
+    font-style: italic;
+    font-size: 1.2rem;
+    background: url("https://www.transparenttextures.com/patterns/old-paper.png");
+    border: 1px solid var(--medium-brown);
+    box-shadow: 3px 3px 6px var(--shadow);
+    margin: 20px auto;
+    max-width: 600px;
 }
 
 /* Authentication Styles */
@@ -217,26 +300,32 @@ button:hover {
 .auth-button {
     display: flex;
     align-items: center;
-    background-color: white;
-    color: #757575;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    background-color: var(--aged-paper);
+    color: var(--dark-brown);
+    border: 1px solid var(--medium-brown);
+    border-radius: 0;
     padding: 8px 16px;
     text-decoration: none;
     font-size: 0.9rem;
     font-weight: 500;
-    transition: background-color 0.3s, box-shadow 0.3s;
+    font-family: 'Playfair Display', serif;
+    transition: all 0.3s;
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 .auth-button:hover {
-    background-color: #f8f8f8;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
+    border-color: var(--gold);
+    box-shadow: 3px 3px 6px var(--shadow);
+    transform: translateY(-2px);
 }
 
 .auth-icon {
     width: 18px;
     height: 18px;
     margin-right: 10px;
+    filter: sepia(100%);
 }
 
 /* User Profile */
@@ -248,39 +337,47 @@ button:hover {
 .profile-info {
     display: flex;
     align-items: center;
-    background-color: #f5f5f5;
+    background-color: var(--aged-paper);
+    border: 1px solid var(--medium-brown);
     padding: 6px 12px;
-    border-radius: 4px;
     margin-right: 10px;
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 .profile-picture {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 0;
     margin-right: 8px;
     object-fit: cover;
+    border: 1px solid var(--gold);
+    filter: sepia(30%);
 }
 
 #userName {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #444;
+    color: var(--dark-brown);
+    font-family: 'Playfair Display', serif;
 }
 
 .logout-button {
-    background-color: #f5f5f5;
-    color: #666;
-    border: none;
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
     padding: 6px 12px;
-    border-radius: 4px;
+    border-radius: 0;
     text-decoration: none;
     font-size: 0.85rem;
-    transition: background-color 0.3s;
+    font-family: 'Playfair Display', serif;
+    transition: all 0.3s;
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 .logout-button:hover {
-    background-color: #e0e0e0;
+    background-color: var(--dark-brown);
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 6px var(--shadow);
 }
 
 /* Confirmation Modal */
@@ -290,7 +387,7 @@ button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(74, 63, 53, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -298,50 +395,79 @@ button:hover {
 }
 
 .modal {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
+    background-color: var(--aged-paper);
+    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
+    border: 1px solid var(--medium-brown);
+    padding: 25px;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.modal:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
 }
 
 .modal-header {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    color: var(--medium-brown);
+    font-family: 'Playfair Display', serif;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 10px;
 }
 
 .modal-body {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    color: var(--dark-brown);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
 }
 
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 15px;
 }
 
 .btn-cancel {
-    background-color: #f5f5f5;
-    color: #333;
-    border: 1px solid #ddd;
+    background-color: var(--aged-paper);
+    color: var(--dark-brown);
+    border: 1px solid var(--medium-brown);
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    transition: all 0.3s;
 }
 
 .btn-confirm {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
     padding: 8px 16px;
-    border-radius: 4px;
+    border-radius: 0;
     cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    transition: all 0.3s;
 }
 
 .btn-cancel:hover {
-    background-color: #e0e0e0;
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
+    transform: translateY(-2px);
+    box-shadow: 2px 2px 4px var(--shadow);
 }
 
 .btn-confirm:hover {
-    background-color: #c0392b;
+    background-color: #8B4513;
+    transform: translateY(-2px);
+    box-shadow: 2px 2px 4px var(--shadow);
 }

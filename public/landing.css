@@ -5,26 +5,24 @@
     padding: 0;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
 :root {
-    --primary-color: #3498db;
-    --primary-dark: #2980b9;
-    --primary-light: #e1f0fa;
-    --accent-color: #e74c3c;
-    --text-color: #333333;
-    --text-light: #7f8c8d;
-    --background-color: #f9f9f9;
-    --card-color: #ffffff;
-    --border-color: #eeeeee;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --border-radius: 8px;
+    --dark-brown: #4A3F35;
+    --medium-brown: #704214;
+    --light-brown: #8B6B4C;
+    --aged-paper: #F2E9D8;
+    --gold: #D4AF37;
+    --shadow: rgba(0, 0, 0, 0.2);
     --transition: all 0.3s ease;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Playfair Display', Georgia, serif;
     line-height: 1.6;
-    color: var(--text-color);
-    background-color: var(--background-color);
+    color: var(--dark-brown);
+    background-color: var(--aged-paper);
+    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
 }
 
 .container {
@@ -34,24 +32,28 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--text-color);
+    color: var(--medium-brown);
     font-weight: 600;
     line-height: 1.3;
+    font-family: 'Playfair Display', Georgia, serif;
 }
 
 a {
     text-decoration: none;
-    color: var(--primary-color);
+    color: var(--medium-brown);
     transition: var(--transition);
 }
 
 a:hover {
-    color: var(--primary-dark);
+    color: var(--dark-brown);
 }
 
 img {
     max-width: 100%;
     height: auto;
+    filter: sepia(20%);
+    border: 1px solid var(--medium-brown);
+    box-shadow: 4px 4px 8px var(--shadow);
 }
 
 .section-title {
@@ -59,59 +61,76 @@ img {
     font-size: 2.5rem;
     margin-bottom: 3rem;
     position: relative;
+    font-style: italic;
+    color: var(--medium-brown);
 }
 
 .section-title:after {
     content: '';
     display: block;
-    width: 80px;
-    height: 4px;
-    background: var(--primary-color);
+    width: 100px;
+    height: 2px;
+    background: var(--gold);
     position: absolute;
     bottom: -15px;
     left: 50%;
     transform: translateX(-50%);
-    border-radius: 2px;
 }
 
 section {
     padding: 100px 0;
+    border-bottom: 1px solid var(--medium-brown);
+    position: relative;
+}
+
+section:after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gold);
+    opacity: 0.6;
 }
 
 .btn {
     display: inline-block;
     padding: 12px 24px;
-    border-radius: var(--border-radius);
+    border-radius: 0;
     font-weight: 600;
     text-align: center;
     cursor: pointer;
     transition: var(--transition);
     text-decoration: none;
+    font-family: 'Playfair Display', Georgia, serif;
+    box-shadow: 3px 3px 6px var(--shadow);
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-    border: 2px solid var(--primary-color);
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    border: 1px solid var(--gold);
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-dark);
-    color: white;
-    border-color: var(--primary-dark);
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
+    border-color: var(--gold);
     transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    box-shadow: 4px 4px 8px var(--shadow);
 }
 
 .btn-secondary {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color);
+    background-color: var(--aged-paper);
+    color: var(--medium-brown);
+    border: 1px solid var(--medium-brown);
 }
 
 .btn-secondary:hover {
-    background-color: var(--primary-light);
-    color: var(--primary-dark);
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
+    border-color: var(--gold);
     transform: translateY(-2px);
 }
 
@@ -124,10 +143,22 @@ section {
 .site-header {
     position: sticky;
     top: 0;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--aged-paper);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 15px 0;
     z-index: 100;
+    border-bottom: 1px solid var(--medium-brown);
+}
+
+.site-header:after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gold);
+    opacity: 0.6;
 }
 
 .nav {
@@ -137,9 +168,13 @@ section {
 }
 
 .logo h1 {
-    font-size: 1.8rem;
-    color: var(--primary-color);
+    font-size: 2rem;
+    color: var(--medium-brown);
     margin: 0;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    font-style: italic;
 }
 
 .nav-links {
@@ -149,27 +184,61 @@ section {
 
 .nav-links a {
     margin-left: 30px;
-    color: var(--text-color);
+    color: var(--dark-brown);
     font-weight: 500;
+    position: relative;
+}
+
+.nav-links a.btn {
+    color: var(--aged-paper);
+    font-weight: 600;
+}
+
+.nav-links a:not(.btn):after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--gold);
+    transition: var(--transition);
+}
+
+.nav-links a:not(.btn):hover:after {
+    width: 100%;
 }
 
 .nav-links a:hover {
-    color: var(--primary-color);
+    color: var(--medium-brown);
 }
 
 .menu-toggle {
     display: none;
     background: none;
     border: none;
-    color: var(--text-color);
+    color: var(--dark-brown);
     font-size: 1.5rem;
     cursor: pointer;
 }
 
 /* Hero Section */
 .hero {
-    background: linear-gradient(to bottom, white, var(--background-color));
+    background: url("https://www.transparenttextures.com/patterns/old-paper.png"), linear-gradient(to bottom, var(--aged-paper), #E6D8C0);
     padding: 120px 0 100px;
+    border-bottom: 1px solid var(--medium-brown);
+    position: relative;
+}
+
+.hero:after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gold);
+    opacity: 0.6;
 }
 
 .hero .container {
@@ -183,15 +252,32 @@ section {
 }
 
 .hero-content h1 {
-    font-size: 3rem;
-    margin-bottom: 20px;
+    font-size: 3.2rem;
+    margin-bottom: 25px;
     line-height: 1.2;
+    color: var(--medium-brown);
+    font-weight: 700;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    font-style: italic;
+    position: relative;
+}
+
+.hero-content h1:after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 2px;
+    background-color: var(--gold);
+    bottom: -10px;
+    left: 0;
 }
 
 .hero-content p {
-    font-size: 1.2rem;
-    color: var(--text-light);
-    margin-bottom: 30px;
+    font-size: 1.3rem;
+    color: var(--dark-brown);
+    margin-bottom: 35px;
+    font-style: italic;
+    line-height: 1.8;
 }
 
 .hero-cta {
@@ -206,48 +292,70 @@ section {
 }
 
 .hero-img {
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
     max-width: 100%;
+    border: 1px solid var(--medium-brown);
+    box-shadow: 8px 8px 15px var(--shadow);
+    position: relative;
 }
 
 /* Benefits Section */
 .benefits {
-    background-color: white;
+    background-color: var(--aged-paper);
+    background-image: url("https://www.transparenttextures.com/patterns/vintage-concrete.png");
 }
 
 .benefits-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
+    gap: 35px;
     margin-bottom: 50px;
 }
 
 .benefit-card {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    box-shadow: var(--shadow);
+    background-color: rgba(242, 233, 216, 0.7);
+    border: 1px solid var(--medium-brown);
+    padding: 35px;
+    box-shadow: 4px 4px 8px var(--shadow);
     text-align: center;
     transition: var(--transition);
+    position: relative;
+}
+
+.benefit-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
 }
 
 .benefit-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-10px) rotateZ(-1deg);
+    box-shadow: 8px 8px 12px var(--shadow);
 }
 
 .benefit-icon {
     font-size: 2.5rem;
-    color: var(--primary-color);
+    color: var(--medium-brown);
     margin-bottom: 20px;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
 }
 
 .benefit-card h3 {
     margin-bottom: 15px;
+    color: var(--dark-brown);
+    font-weight: 700;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 8px;
+    display: inline-block;
 }
 
 .benefit-card p {
-    color: var(--text-light);
+    color: var(--dark-brown);
+    font-style: italic;
 }
 
 .benefits-cta {
@@ -263,45 +371,64 @@ section {
 .step {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
+    background-color: rgba(242, 233, 216, 0.6);
+    border: 1px solid var(--medium-brown);
+    padding: 25px;
+    box-shadow: 4px 4px 8px var(--shadow);
+    transition: var(--transition);
+}
+
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: 6px 6px 12px var(--shadow);
 }
 
 .step-number {
-    background-color: var(--primary-color);
-    color: white;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+    background-color: var(--medium-brown);
+    color: var(--aged-paper);
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: bold;
-    margin-right: 20px;
+    margin-right: 25px;
     flex-shrink: 0;
+    border: 1px solid var(--gold);
+    font-family: 'Playfair Display', serif;
+    position: relative;
 }
 
 .step-content h3 {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    color: var(--medium-brown);
+    font-weight: 700;
+    font-style: italic;
 }
 
 .step-content p {
-    color: var(--text-light);
+    color: var(--dark-brown);
+    font-size: 1.1rem;
+    line-height: 1.7;
 }
 
 .how-img {
-    border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     max-width: 100%;
+    border: 1px solid var(--medium-brown);
 }
 
 .demo-cta {
     text-align: center;
+    margin-top: 40px;
 }
 
 /* Testimonials Section */
 .testimonials {
-    background-color: var(--primary-light);
+    background-color: rgba(112, 66, 20, 0.1);
+    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
 }
 
 .testimonial-grid {
@@ -311,32 +438,44 @@ section {
 }
 
 .testimonial-card {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 30px;
-    box-shadow: var(--shadow);
+    background-color: var(--aged-paper);
+    border: 1px solid var(--medium-brown);
+    padding: 35px;
+    box-shadow: 4px 4px 10px var(--shadow);
     transition: var(--transition);
+    position: relative;
+}
+
+.testimonial-card:before {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    top: -15px;
+    left: -15px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%23704214'%3E%3Cpath d='M9.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3Cpath d='M20.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    opacity: 0.7;
 }
 
 .testimonial-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px) rotate(1deg);
+    box-shadow: 8px 8px 16px var(--shadow);
 }
 
 .testimonial-content {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 15px;
 }
 
 .testimonial-content p {
     font-style: italic;
     position: relative;
     padding: 0 10px;
-}
-
-.testimonial-content p::before,
-.testimonial-content p::after {
-    content: '"';
-    font-size: 1.5rem;
-    color: var(--primary-color);
+    color: var(--dark-brown);
+    font-size: 1.1rem;
+    line-height: 1.8;
 }
 
 .testimonial-author {
@@ -345,62 +484,96 @@ section {
 }
 
 .author-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
+    width: 60px;
+    height: 60px;
     overflow: hidden;
     margin-right: 15px;
+    border: 1px solid var(--medium-brown);
+}
+
+.author-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(30%);
+    border: none;
+    box-shadow: none;
 }
 
 .author-info h4 {
     margin-bottom: 5px;
+    color: var(--medium-brown);
+    font-weight: 700;
 }
 
 .author-info p {
-    color: var(--text-light);
+    color: var(--dark-brown);
     font-size: 0.9rem;
+    font-style: italic;
 }
 
 /* CTA Section */
 .cta-section {
-    background: linear-gradient(120deg, var(--primary-color), var(--primary-dark));
-    color: white;
+    background: url("https://www.transparenttextures.com/patterns/old-paper.png"), linear-gradient(120deg, var(--medium-brown), var(--dark-brown));
+    color: var(--aged-paper);
     text-align: center;
     padding: 80px 0;
+    position: relative;
+    border-bottom: 1px solid var(--dark-brown);
+}
+
+.cta-section:before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 10px;
+    top: 0;
+    left: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L20,0 C30,0 30,10 40,10 C50,10 50,0 60,0 C70,0 70,10 80,10 C90,10 90,0 100,0 L100,10 L0,10 Z' fill='%23F2E9D8' /%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    opacity: 0.6;
 }
 
 .cta-content h2 {
-    color: white;
-    font-size: 2.5rem;
-    margin-bottom: 20px;
+    color: var(--aged-paper);
+    font-size: 2.8rem;
+    margin-bottom: 25px;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    font-style: italic;
 }
 
 .cta-content p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.2rem;
-    margin-bottom: 30px;
+    color: rgba(242, 233, 216, 0.9);
+    font-size: 1.3rem;
+    margin-bottom: 35px;
     max-width: 700px;
     margin-left: auto;
     margin-right: auto;
+    font-style: italic;
+    line-height: 1.7;
 }
 
 .cta-section .btn-primary {
-    background-color: white;
-    color: var(--primary-color);
-    border-color: white;
+    background-color: var(--aged-paper);
+    color: var(--medium-brown);
+    border-color: var(--gold);
 }
 
 .cta-section .btn-primary:hover {
-    background-color: var(--background-color);
-    color: var(--primary-color);
-    border-color: var(--background-color);
+    background-color: var(--gold);
+    color: var(--dark-brown);
+    border-color: var(--dark-brown);
+    transform: translateY(-3px);
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Footer Styles */
 .site-footer {
-    background-color: #2c3e50;
-    color: white;
+    background-color: var(--dark-brown);
+    color: var(--aged-paper);
     padding: 80px 0 30px;
+    background-image: url("https://www.transparenttextures.com/patterns/binding-dark.png");
 }
 
 .footer-content {
@@ -410,12 +583,20 @@ section {
 }
 
 .footer-logo h2 {
-    color: white;
+    color: var(--aged-paper);
     margin-bottom: 10px;
+    font-style: italic;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 8px;
+    display: inline-block;
 }
 
 .footer-logo p {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(242, 233, 216, 0.8);
+    font-style: italic;
 }
 
 .footer-links {
@@ -424,9 +605,12 @@ section {
 }
 
 .footer-column h3 {
-    color: white;
+    color: var(--gold);
     margin-bottom: 20px;
     font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
 }
 
 .footer-column ul {
@@ -434,16 +618,27 @@ section {
 }
 
 .footer-column li {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .footer-column a {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(242, 233, 216, 0.8);
     transition: var(--transition);
+    position: relative;
+    padding-left: 15px;
+}
+
+.footer-column a:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--gold);
 }
 
 .footer-column a:hover {
-    color: white;
+    color: var(--aged-paper);
+    transform: translateX(3px);
+    display: inline-block;
 }
 
 .footer-bottom {
@@ -451,11 +646,12 @@ section {
     justify-content: space-between;
     align-items: center;
     padding-top: 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(242, 233, 216, 0.2);
 }
 
 .footer-bottom p {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(242, 233, 216, 0.7);
+    font-style: italic;
 }
 
 .social-icons {
@@ -464,14 +660,14 @@ section {
 }
 
 .social-icons a {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1.2rem;
+    color: var(--gold);
+    font-size: 1.3rem;
     transition: var(--transition);
 }
 
 .social-icons a:hover {
-    color: white;
-    transform: translateY(-3px);
+    color: var(--aged-paper);
+    transform: translateY(-5px);
 }
 
 /* Responsive Styles */
@@ -483,6 +679,11 @@ section {
     .hero-content, .hero-image {
         width: 100%;
         text-align: center;
+    }
+    
+    .hero-content h1:after {
+        left: 50%;
+        transform: translateX(-50%);
     }
     
     .hero-cta {
@@ -504,6 +705,7 @@ section {
     
     .footer-logo {
         margin-bottom: 30px;
+        text-align: center;
     }
     
     .footer-links {
@@ -526,12 +728,14 @@ section {
         top: 70px;
         left: 0;
         width: 100%;
-        background-color: white;
+        background-color: var(--aged-paper);
+        background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
         flex-direction: column;
         padding: 20px;
-        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
         clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
         transition: var(--transition);
+        border-bottom: 1px solid var(--medium-brown);
     }
     
     .nav-links.active {
@@ -553,6 +757,14 @@ section {
     
     .social-icons {
         margin-top: 20px;
+    }
+    
+    .benefit-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .testimonial-card:hover {
+        transform: translateY(-5px);
     }
 }
 
@@ -578,5 +790,10 @@ section {
     
     .step-number {
         margin: 0 auto 20px;
+    }
+    
+    .testimonial-card:before {
+        top: -10px;
+        left: -10px;
     }
 }
