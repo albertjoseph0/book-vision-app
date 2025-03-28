@@ -70,6 +70,16 @@ const extractUserIdentity = (req, res, next) => {
     next();
 };
 
+// Authentication check middleware - redirects to landing page if not authenticated
+const requireAuth = (req, res, next) => {
+    if (req.user && req.user.isAuthenticated) {
+        next();
+    } else {
+        console.log('Unauthenticated access attempt to protected route');
+        res.redirect('/'); // Redirect to landing page
+    }
+};
+
 // Apply the authentication middleware to all routes
 app.use(extractUserIdentity);
 
@@ -79,7 +89,8 @@ app.get('/', (req, res) => {
 });
 
 // Route for the main app after clicking 'Get Started' or any CTA button
-app.get('/app', (req, res) => {
+// Now protected with authentication requirement
+app.get('/app', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -184,36 +195,23 @@ function parseVisionResponse(responseData) {
 
 // API Routes
 
-// Get all books - UPDATED to only show user's own books or anonymous books
-app.get('/books', async (req, res) => {
+// Get all books - protected with authentication
+app.get('/books', requireAuth, async (req, res) => {
     try {
         const pool = await getDbPool();
         let query = '';
         let request = pool.request();
         
-        // Check if user is authenticated
-        if (req.user && req.user.isAuthenticated) {
-            // Filter books to show ONLY books that belong to this user
-            query = `
-                SELECT id, title, author, date_added 
-                FROM books 
-                WHERE user_id = @userId
-                ORDER BY date_added DESC
-            `;
-            request.input('userId', sql.NVarChar, req.user.id);
-            
-            console.log(`Fetching books for authenticated user: ${req.user.id}`);
-        } else {
-            // When not authenticated, only show anonymous books
-            query = `
-                SELECT id, title, author, date_added 
-                FROM books 
-                WHERE user_id = 'anonymous'
-                ORDER BY date_added DESC
-            `;
-            
-            console.log('Fetching only anonymous books (unauthenticated request)');
-        }
+        // User is authenticated (we know this because of requireAuth middleware)
+        query = `
+            SELECT id, title, author, date_added 
+            FROM books 
+            WHERE user_id = @userId
+            ORDER BY date_added DESC
+        `;
+        request.input('userId', sql.NVarChar, req.user.id);
+        
+        console.log(`Fetching books for authenticated user: ${req.user.id}`);
         
         const result = await request.query(query);
         res.json(result.recordset);
@@ -224,8 +222,8 @@ app.get('/books', async (req, res) => {
     }
 });
 
-// Delete a book (secure version)
-app.delete('/books/:id', async (req, res) => {
+// Delete a book (secure version) - protected with authentication
+app.delete('/books/:id', requireAuth, async (req, res) => {
     const bookId = req.params.id;
     
     if (!bookId) {
@@ -235,13 +233,10 @@ app.delete('/books/:id', async (req, res) => {
     try {
         const pool = await getDbPool();
         
-        // Get user_id from auth middleware
-        const userId = req.user && req.user.isAuthenticated ? req.user.id : 'anonymous';
-        
         // Delete the book only if it belongs to this user
         const deleteResult = await pool.request()
             .input('id', sql.Int, bookId)
-            .input('userId', sql.NVarChar, userId)
+            .input('userId', sql.NVarChar, req.user.id)
             .query('DELETE FROM books WHERE id = @id AND user_id = @userId');
         
         // Check if any rows were affected
@@ -259,8 +254,8 @@ app.delete('/books/:id', async (req, res) => {
     }
 });
 
-// Scan and process bookshelf photo
-app.post('/scan', upload.single('photo'), async (req, res) => {
+// Scan and process bookshelf photo - protected with authentication
+app.post('/scan', requireAuth, upload.single('photo'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No photo uploaded' });
     }
@@ -309,8 +304,8 @@ app.post('/scan', upload.single('photo'), async (req, res) => {
         const pool = await getDbPool();
         let added = 0;
         
-        // Get user_id for this request (use 'anonymous' if not authenticated)
-        const userId = req.user && req.user.isAuthenticated ? req.user.id : 'anonymous';
+        // Use the authenticated user's ID
+        const userId = req.user.id;
         
         for (const book of books) {
             // Skip invalid books (extra safety check)
