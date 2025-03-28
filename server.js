@@ -204,7 +204,7 @@ app.get('/books', requireAuth, async (req, res) => {
         
         // User is authenticated (we know this because of requireAuth middleware)
         query = `
-            SELECT id, title, author, date_added 
+            SELECT id, title, author, date_added, user_email 
             FROM books 
             WHERE user_id = @userId
             ORDER BY date_added DESC
@@ -326,7 +326,8 @@ app.post('/scan', requireAuth, upload.single('photo'), async (req, res) => {
                     .input('title', sql.NVarChar, book.title)
                     .input('author', sql.NVarChar, book.author)
                     .input('userId', sql.NVarChar, userId)
-                    .query('INSERT INTO books (title, author, user_id, date_added) VALUES (@title, @author, @userId, GETDATE())');
+                    .input('userEmail', sql.NVarChar, req.user.email || null) // Add this line
+                    .query('INSERT INTO books (title, author, user_id, user_email, date_added) VALUES (@title, @author, @userId, @userEmail, GETDATE())'); // Update this line
                 
                 added++;
             }
