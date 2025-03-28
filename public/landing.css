@@ -289,11 +289,6 @@ section {
     color: var(--text-light);
 }
 
-.action-image {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
 .how-img {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
