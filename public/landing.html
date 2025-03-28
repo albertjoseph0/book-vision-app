@@ -19,7 +19,7 @@
                     <a href="#features">Distinctive Features</a>
                     <a href="#how-it-works">The Experience</a>
                     <a href="#testimonials">Fellow Bibliophiles</a>
-                    <a href="/.auth/login/google?post_login_redirect_uri=/app" class="btn btn-primary">Enter Library</a>
+                    <a href="#" class="btn btn-primary auth-link">Enter Library</a>
                 </div>
                 <button class="menu-toggle" id="menuToggle">
                     <i class="fas fa-bars"></i>
@@ -34,7 +34,7 @@
                 <h1>Catalog Your Books with Elegance</h1>
                 <p>Honor your collection with technology that respects the tactile pleasure of physical books.</p>
                 <div class="hero-cta">
-                    <a href="/.auth/login/google?post_login_redirect_uri=/app" class="btn btn-primary btn-large">Begin Your Chronicle</a>
+                    <a href="#" class="btn btn-primary btn-large auth-link">Begin Your Chronicle</a>
                     <a href="#how-it-works" class="btn btn-secondary btn-large">Discover the Artistry</a>
                 </div>
             </div>
@@ -78,7 +78,7 @@
                 </div>
             </div>
             <div class="benefits-cta">
-                <a href="/.auth/login/google?post_login_redirect_uri=/app" class="btn btn-primary">Commence Your Catalogue</a>
+                <a href="#" class="btn btn-primary auth-link">Commence Your Catalogue</a>
             </div>
         </div>
     </section>
@@ -110,7 +110,7 @@
                 </div>
             </div>
             <div class="demo-cta">
-                <a href="/.auth/login/google?post_login_redirect_uri=/app" class="btn btn-primary">Experience the Artistry</a>
+                <a href="#" class="btn btn-primary auth-link">Experience the Artistry</a>
             </div>
         </div>
     </section>
@@ -170,7 +170,7 @@
             <div class="cta-content">
                 <h2>Ready to Elevate Your Collection?</h2>
                 <p>Join bibliophiles who appreciate the dignity of their cherished volumes.</p>
-                <a href="/.auth/login/google?post_login_redirect_uri=/app" class="btn btn-primary btn-large">Begin Your Literary Journey</a>
+                <a href="#" class="btn btn-primary btn-large auth-link">Begin Your Literary Journey</a>
             </div>
         </div>
     </section>
@@ -188,7 +188,7 @@
                         <ul>
                             <li><a href="#features">Distinctive Features</a></li>
                             <li><a href="#how-it-works">The Experience</a></li>
-                            <li><a href="/.auth/login/google?post_login_redirect_uri=/app">Enter Library</a></li>
+                            <li><a href="#" class="auth-link">Enter Library</a></li>
                         </ul>
                     </div>
                     <div class="footer-column">
@@ -231,6 +231,11 @@
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                // Skip if this is an auth link (already handled)
+                if (this.classList.contains('auth-link')) {
+                    return;
+                }
+                
                 e.preventDefault();
                 
                 const target = document.querySelector(this.getAttribute('href'));
@@ -240,6 +245,37 @@
                         behavior: 'smooth'
                     });
                 }
+            });
+        });
+        
+        // Auth navigation handler - checks if already authenticated
+        async function handleAuthNavigation(e) {
+            e.preventDefault();
+            
+            try {
+                // Check if user is already authenticated using Azure's built-in endpoint
+                const response = await fetch('/.auth/me');
+                const authData = await response.json();
+                
+                // If user is authenticated (array has items)
+                if (authData && authData.length > 0) {
+                    // Already authenticated, go directly to app
+                    window.location.href = '/app';
+                } else {
+                    // Not authenticated, go to login
+                    window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+                }
+            } catch (error) {
+                console.error('Error checking authentication:', error);
+                // On error, default to login flow
+                window.location.href = '/.auth/login/google?post_login_redirect_uri=/app';
+            }
+        }
+        
+        // Add event listeners to all auth links
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.auth-link').forEach(link => {
+                link.addEventListener('click', handleAuthNavigation);
             });
         });
     </script>
