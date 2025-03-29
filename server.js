@@ -14,6 +14,37 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID); // Add this to yo
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Add comprehensive security headers
+app.use((req, res, next) => {
+    // HSTS header - already implemented
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    
+    // Prevents MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Prevents clickjacking by forbidding your site from being embedded in iframes
+    res.setHeader('X-Frame-Options', 'DENY');
+    
+    // Enables browser's built-in XSS protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    
+    // Controls referrer information sent with requests
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    
+    // Content Security Policy - controls which resources can be loaded
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; " +
+        "img-src 'self' data: https://source.unsplash.com https://i.pravatar.cc https://*.googleusercontent.com; " +
+        "script-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/client 'unsafe-inline'; " +
+        "style-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/style 'unsafe-inline'; " +
+        "font-src 'self' https://cdnjs.cloudflare.com; " +
+        "frame-src https://accounts.google.com/gsi/ 'self'; " +
+        "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com;"
+      );
+    next();
+  });
+  
 // Apply cookie-parser middleware
 app.use(cookieParser());
 
