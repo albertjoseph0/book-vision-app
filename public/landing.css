@@ -8,21 +8,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-    --dark-brown: #4A3F35;
-    --medium-brown: #704214;
-    --light-brown: #8B6B4C;
-    --aged-paper: #F2E9D8;
-    --gold: #D4AF37;
-    --shadow: rgba(0, 0, 0, 0.2);
-    --transition: all 0.3s ease;
+    --background: #F8F8F2;
+    --primary-text: #1D3557;
+    --secondary-text: #457B9D;
+    --accent: #E76F51;
+    --light-accent: #f8a08a;
+    --light-blue: #A8DADC;
+    --shadow: rgba(0, 0, 0, 0.1);
 }
 
 body {
     font-family: 'Playfair Display', Georgia, serif;
     line-height: 1.6;
-    color: var(--dark-brown);
-    background-color: var(--aged-paper);
-    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
+    color: var(--primary-text);
+    background-color: var(--background);
+    background-image: none;
 }
 
 .container {
@@ -32,7 +32,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--medium-brown);
+    color: var(--primary-text);
     font-weight: 600;
     line-height: 1.3;
     font-family: 'Playfair Display', Georgia, serif;
@@ -40,20 +40,21 @@ h1, h2, h3, h4, h5, h6 {
 
 a {
     text-decoration: none;
-    color: var(--medium-brown);
-    transition: var(--transition);
+    color: var(--secondary-text);
+    transition: all 0.3s ease;
 }
 
 a:hover {
-    color: var(--dark-brown);
+    color: var(--primary-text);
 }
 
 img {
     max-width: 100%;
     height: auto;
-    filter: sepia(20%);
-    border: 1px solid var(--medium-brown);
+    filter: none;
+    border: 1px solid var(--secondary-text);
     box-shadow: 4px 4px 8px var(--shadow);
+    border-radius: 4px;
 }
 
 .section-title {
@@ -62,7 +63,7 @@ img {
     margin-bottom: 3rem;
     position: relative;
     font-style: italic;
-    color: var(--medium-brown);
+    color: var(--primary-text);
 }
 
 .section-title:after {
@@ -70,7 +71,7 @@ img {
     display: block;
     width: 100px;
     height: 2px;
-    background: var(--gold);
+    background: var(--accent);
     position: absolute;
     bottom: -15px;
     left: 50%;
@@ -79,7 +80,7 @@ img {
 
 section {
     padding: 100px 0;
-    border-bottom: 1px solid var(--medium-brown);
+    border-bottom: 1px solid var(--secondary-text);
     position: relative;
 }
 
@@ -90,48 +91,47 @@ section:after {
     left: 0;
     right: 0;
     height: 1px;
-    background-color: var(--gold);
+    background-color: var(--accent);
     opacity: 0.6;
 }
 
 .btn {
     display: inline-block;
     padding: 12px 24px;
-    border-radius: 0;
+    border-radius: 4px;
     font-weight: 600;
     text-align: center;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     text-decoration: none;
     font-family: 'Playfair Display', Georgia, serif;
     box-shadow: 3px 3px 6px var(--shadow);
 }
 
 .btn-primary {
-    background-color: var(--medium-brown);
-    color: var(--aged-paper);
-    border: 1px solid var(--gold);
+    background-color: var(--accent);
+    color: var(--background);
+    border: none;
 }
 
 .btn-primary:hover {
-    background-color: var(--dark-brown);
-    color: var(--aged-paper);
-    border-color: var(--gold);
+    background-color: var(--light-accent);
+    color: var(--background);
     transform: translateY(-2px);
     box-shadow: 4px 4px 8px var(--shadow);
 }
 
 .btn-secondary {
-    background-color: var(--aged-paper);
-    color: var(--medium-brown);
-    border: 1px solid var(--medium-brown);
+    background-color: var(--secondary-text);
+    color: var(--background);
+    border: none;
 }
 
 .btn-secondary:hover {
-    background-color: var(--dark-brown);
-    color: var(--aged-paper);
-    border-color: var(--gold);
+    background-color: var(--primary-text);
+    color: var(--background);
     transform: translateY(-2px);
+    box-shadow: 4px 4px 8px var(--shadow);
 }
 
 .btn-large {
@@ -143,11 +143,11 @@ section:after {
 .site-header {
     position: sticky;
     top: 0;
-    background-color: var(--aged-paper);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    background-color: var(--background);
+    box-shadow: 0 2px 10px var(--shadow);
     padding: 15px 0;
     z-index: 100;
-    border-bottom: 1px solid var(--medium-brown);
+    border-bottom: 1px solid var(--secondary-text);
 }
 
 .site-header:after {
@@ -157,7 +157,7 @@ section:after {
     left: 0;
     right: 0;
     height: 1px;
-    background-color: var(--gold);
+    background-color: var(--accent);
     opacity: 0.6;
 }
 
@@ -169,11 +169,11 @@ section:after {
 
 .logo h1 {
     font-size: 2rem;
-    color: var(--medium-brown);
+    color: var(--primary-text);
     margin: 0;
     font-weight: 700;
     letter-spacing: 1px;
-    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    text-shadow: 1px 1px 0 var(--shadow);
     font-style: italic;
 }
 
@@ -184,13 +184,13 @@ section:after {
 
 .nav-links a {
     margin-left: 30px;
-    color: var(--dark-brown);
+    color: var(--secondary-text);
     font-weight: 500;
     position: relative;
 }
 
 .nav-links a.btn {
-    color: var(--aged-paper);
+    color: var(--background);
     font-weight: 600;
 }
 
@@ -201,8 +201,8 @@ section:after {
     height: 1px;
     bottom: -2px;
     left: 0;
-    background-color: var(--gold);
-    transition: var(--transition);
+    background-color: var(--accent);
+    transition: all 0.3s ease;
 }
 
 .nav-links a:not(.btn):hover:after {
@@ -210,23 +210,23 @@ section:after {
 }
 
 .nav-links a:hover {
-    color: var(--medium-brown);
+    color: var(--primary-text);
 }
 
 .menu-toggle {
     display: none;
     background: none;
     border: none;
-    color: var(--dark-brown);
+    color: var(--primary-text);
     font-size: 1.5rem;
     cursor: pointer;
 }
 
 /* Hero Section */
 .hero {
-    background: url("https://www.transparenttextures.com/patterns/old-paper.png"), linear-gradient(to bottom, var(--aged-paper), #E6D8C0);
+    background: var(--background);
     padding: 120px 0 100px;
-    border-bottom: 1px solid var(--medium-brown);
+    border-bottom: 1px solid var(--secondary-text);
     position: relative;
 }
 
@@ -237,7 +237,7 @@ section:after {
     left: 0;
     right: 0;
     height: 1px;
-    background-color: var(--gold);
+    background-color: var(--accent);
     opacity: 0.6;
 }
 
@@ -255,9 +255,9 @@ section:after {
     font-size: 3.2rem;
     margin-bottom: 25px;
     line-height: 1.2;
-    color: var(--medium-brown);
+    color: var(--primary-text);
     font-weight: 700;
-    text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    text-shadow: 1px 1px 0 var(--shadow);
     font-style: italic;
     position: relative;
 }
@@ -267,14 +267,14 @@ section:after {
     position: absolute;
     width: 80px;
     height: 2px;
-    background-color: var(--gold);
+    background-color: var(--accent);
     bottom: -10px;
     left: 0;
 }
 
 .hero-content p {
     font-size: 1.3rem;
-    color: var(--dark-brown);
+    color: var(--secondary-text);
     margin-bottom: 35px;
     font-style: italic;
     line-height: 1.8;
@@ -293,15 +293,16 @@ section:after {
 
 .hero-img {
     max-width: 100%;
-    border: 1px solid var(--medium-brown);
+    border: 1px solid var(--secondary-text);
     box-shadow: 8px 8px 15px var(--shadow);
     position: relative;
+    border-radius: 4px;
 }
 
 /* Benefits Section */
 .benefits {
-    background-color: var(--aged-paper);
-    background-image: url("https://www.transparenttextures.com/patterns/vintage-concrete.png");
+    background-color: var(--background);
+    position: relative;
 }
 
 .benefits-grid {
@@ -312,13 +313,14 @@ section:after {
 }
 
 .benefit-card {
-    background-color: rgba(242, 233, 216, 0.7);
-    border: 1px solid var(--medium-brown);
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--secondary-text);
     padding: 35px;
     box-shadow: 4px 4px 8px var(--shadow);
     text-align: center;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     position: relative;
+    border-radius: 4px;
 }
 
 .benefit-card:before {
@@ -328,33 +330,33 @@ section:after {
     left: 0;
     right: 0;
     height: 5px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    opacity: 0.6;
+    background: var(--accent);
+    opacity: 0.9;
 }
 
 .benefit-card:hover {
-    transform: translateY(-10px) rotateZ(-1deg);
+    transform: translateY(-10px);
     box-shadow: 8px 8px 12px var(--shadow);
 }
 
 .benefit-icon {
     font-size: 2.5rem;
-    color: var(--medium-brown);
+    color: var(--accent);
     margin-bottom: 20px;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+    text-shadow: 1px 1px 1px var(--shadow);
 }
 
 .benefit-card h3 {
     margin-bottom: 15px;
-    color: var(--dark-brown);
+    color: var(--primary-text);
     font-weight: 700;
-    border-bottom: 1px solid var(--gold);
+    border-bottom: 1px solid var(--accent);
     padding-bottom: 8px;
     display: inline-block;
 }
 
 .benefit-card p {
-    color: var(--dark-brown);
+    color: var(--secondary-text);
     font-style: italic;
 }
 
@@ -372,11 +374,12 @@ section:after {
     display: flex;
     align-items: flex-start;
     margin-bottom: 50px;
-    background-color: rgba(242, 233, 216, 0.6);
-    border: 1px solid var(--medium-brown);
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--secondary-text);
     padding: 25px;
     box-shadow: 4px 4px 8px var(--shadow);
-    transition: var(--transition);
+    transition: all 0.3s ease;
+    border-radius: 4px;
 }
 
 .step:hover {
@@ -385,8 +388,8 @@ section:after {
 }
 
 .step-number {
-    background-color: var(--medium-brown);
-    color: var(--aged-paper);
+    background-color: var(--accent);
+    color: var(--background);
     width: 60px;
     height: 60px;
     display: flex;
@@ -396,20 +399,21 @@ section:after {
     font-weight: bold;
     margin-right: 25px;
     flex-shrink: 0;
-    border: 1px solid var(--gold);
+    border: none;
     font-family: 'Playfair Display', serif;
     position: relative;
+    border-radius: 4px;
 }
 
 .step-content h3 {
     margin-bottom: 15px;
-    color: var(--medium-brown);
+    color: var(--primary-text);
     font-weight: 700;
     font-style: italic;
 }
 
 .step-content p {
-    color: var(--dark-brown);
+    color: var(--secondary-text);
     font-size: 1.1rem;
     line-height: 1.7;
 }
@@ -417,7 +421,8 @@ section:after {
 .how-img {
     box-shadow: var(--shadow);
     max-width: 100%;
-    border: 1px solid var(--medium-brown);
+    border: 1px solid var(--secondary-text);
+    border-radius: 4px;
 }
 
 .demo-cta {
@@ -427,8 +432,7 @@ section:after {
 
 /* Testimonials Section */
 .testimonials {
-    background-color: rgba(112, 66, 20, 0.1);
-    background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
+    background-color: rgba(168, 218, 220, 0.2);
 }
 
 .testimonial-grid {
@@ -438,12 +442,13 @@ section:after {
 }
 
 .testimonial-card {
-    background-color: var(--aged-paper);
-    border: 1px solid var(--medium-brown);
+    background-color: var(--background);
+    border: 1px solid var(--secondary-text);
     padding: 35px;
     box-shadow: 4px 4px 10px var(--shadow);
-    transition: var(--transition);
+    transition: all 0.3s ease;
     position: relative;
+    border-radius: 4px;
 }
 
 .testimonial-card:before {
@@ -453,19 +458,19 @@ section:after {
     height: 50px;
     top: -15px;
     left: -15px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%23704214'%3E%3Cpath d='M9.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3Cpath d='M20.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%23E76F51'%3E%3Cpath d='M9.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3Cpath d='M20.4 10.6c-.8.9-1.7 1.7-2.9 2.3-.8.4-1.7.8-2.6 1.1l.2.7c.9-.1 1.8-.4 2.6-.8 1.2-.7 1.9-1.4 2.2-2 .3-.5.4-1.1.2-1.7-.1-.7-.5-1-1.2-1-1.2 0-1.5 1-1.5 1.4.1.9.9 1.2 1.3 1.2.1 0 .9 0 .9-.9 0-.3-.2-.6-.5-.7-.1 0-.1-.1-.1-.2s.1-.2.2-.2c.6 0 .9.5.9 1 0 .9-.6 1.4-1.5 1.4-1.2 0-1.7-1-1.7-1.8 0-1.4 1.1-2.2 2.1-2.2 1.4 0 2.1 1.1 2.1 2.2.1.4-.1 1-0.7 2Zm0 0'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .testimonial-card:hover {
-    transform: translateY(-8px) rotate(1deg);
+    transform: translateY(-8px);
     box-shadow: 8px 8px 16px var(--shadow);
 }
 
 .testimonial-content {
     margin-bottom: 25px;
-    border-bottom: 1px solid var(--gold);
+    border-bottom: 1px solid var(--accent);
     padding-bottom: 15px;
 }
 
@@ -473,7 +478,7 @@ section:after {
     font-style: italic;
     position: relative;
     padding: 0 10px;
-    color: var(--dark-brown);
+    color: var(--primary-text);
     font-size: 1.1rem;
     line-height: 1.8;
 }
@@ -488,38 +493,40 @@ section:after {
     height: 60px;
     overflow: hidden;
     margin-right: 15px;
-    border: 1px solid var(--medium-brown);
+    border: 1px solid var(--secondary-text);
+    border-radius: 50%;
 }
 
 .author-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: sepia(30%);
+    filter: none;
     border: none;
     box-shadow: none;
+    border-radius: 0;
 }
 
 .author-info h4 {
     margin-bottom: 5px;
-    color: var(--medium-brown);
+    color: var(--primary-text);
     font-weight: 700;
 }
 
 .author-info p {
-    color: var(--dark-brown);
+    color: var(--secondary-text);
     font-size: 0.9rem;
     font-style: italic;
 }
 
 /* CTA Section */
 .cta-section {
-    background: url("https://www.transparenttextures.com/patterns/old-paper.png"), linear-gradient(120deg, var(--medium-brown), var(--dark-brown));
-    color: var(--aged-paper);
+    background: linear-gradient(120deg, var(--secondary-text), var(--primary-text));
+    color: var(--background);
     text-align: center;
     padding: 80px 0;
     position: relative;
-    border-bottom: 1px solid var(--dark-brown);
+    border-bottom: 1px solid var(--primary-text);
 }
 
 .cta-section:before {
@@ -529,22 +536,22 @@ section:after {
     height: 10px;
     top: 0;
     left: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L20,0 C30,0 30,10 40,10 C50,10 50,0 60,0 C70,0 70,10 80,10 C90,10 90,0 100,0 L100,10 L0,10 Z' fill='%23F2E9D8' /%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L20,0 C30,0 30,10 40,10 C50,10 50,0 60,0 C70,0 70,10 80,10 C90,10 90,0 100,0 L100,10 L0,10 Z' fill='%23F8F8F2' /%3E%3C/svg%3E");
     background-repeat: repeat-x;
     opacity: 0.6;
 }
 
 .cta-content h2 {
-    color: var(--aged-paper);
+    color: var(--background);
     font-size: 2.8rem;
     margin-bottom: 25px;
     font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     font-style: italic;
 }
 
 .cta-content p {
-    color: rgba(242, 233, 216, 0.9);
+    color: rgba(248, 248, 242, 0.9);
     font-size: 1.3rem;
     margin-bottom: 35px;
     max-width: 700px;
@@ -555,25 +562,23 @@ section:after {
 }
 
 .cta-section .btn-primary {
-    background-color: var(--aged-paper);
-    color: var(--medium-brown);
-    border-color: var(--gold);
+    background-color: var(--accent);
+    color: var(--background);
+    border: none;
 }
 
 .cta-section .btn-primary:hover {
-    background-color: var(--gold);
-    color: var(--dark-brown);
-    border-color: var(--dark-brown);
+    background-color: var(--light-accent);
+    color: var(--background);
     transform: translateY(-3px);
-    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Footer Styles */
 .site-footer {
-    background-color: var(--dark-brown);
-    color: var(--aged-paper);
+    background-color: var(--primary-text);
+    color: var(--background);
     padding: 80px 0 30px;
-    background-image: url("https://www.transparenttextures.com/patterns/binding-dark.png");
 }
 
 .footer-content {
@@ -583,19 +588,19 @@ section:after {
 }
 
 .footer-logo h2 {
-    color: var(--aged-paper);
+    color: var(--background);
     margin-bottom: 10px;
     font-style: italic;
     font-weight: 700;
     letter-spacing: 1px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-    border-bottom: 1px solid var(--gold);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    border-bottom: 1px solid var(--accent);
     padding-bottom: 8px;
     display: inline-block;
 }
 
 .footer-logo p {
-    color: rgba(242, 233, 216, 0.8);
+    color: rgba(248, 248, 242, 0.8);
     font-style: italic;
 }
 
@@ -605,7 +610,7 @@ section:after {
 }
 
 .footer-column h3 {
-    color: var(--gold);
+    color: var(--accent);
     margin-bottom: 20px;
     font-size: 1.2rem;
     text-transform: uppercase;
@@ -622,8 +627,8 @@ section:after {
 }
 
 .footer-column a {
-    color: rgba(242, 233, 216, 0.8);
-    transition: var(--transition);
+    color: rgba(248, 248, 242, 0.8);
+    transition: all 0.3s ease;
     position: relative;
     padding-left: 15px;
 }
@@ -632,11 +637,11 @@ section:after {
     content: "•";
     position: absolute;
     left: 0;
-    color: var(--gold);
+    color: var(--accent);
 }
 
 .footer-column a:hover {
-    color: var(--aged-paper);
+    color: var(--background);
     transform: translateX(3px);
     display: inline-block;
 }
@@ -646,11 +651,11 @@ section:after {
     justify-content: space-between;
     align-items: center;
     padding-top: 30px;
-    border-top: 1px solid rgba(242, 233, 216, 0.2);
+    border-top: 1px solid rgba(248, 248, 242, 0.2);
 }
 
 .footer-bottom p {
-    color: rgba(242, 233, 216, 0.7);
+    color: rgba(248, 248, 242, 0.7);
     font-style: italic;
 }
 
@@ -660,13 +665,13 @@ section:after {
 }
 
 .social-icons a {
-    color: var(--gold);
+    color: var(--accent);
     font-size: 1.3rem;
-    transition: var(--transition);
+    transition: all 0.3s ease;
 }
 
 .social-icons a:hover {
-    color: var(--aged-paper);
+    color: var(--background);
     transform: translateY(-5px);
 }
 
@@ -728,14 +733,13 @@ section:after {
         top: 70px;
         left: 0;
         width: 100%;
-        background-color: var(--aged-paper);
-        background-image: url("https://www.transparenttextures.com/patterns/old-paper.png");
+        background-color: var(--background);
         flex-direction: column;
         padding: 20px;
-        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 10px var(--shadow);
         clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
-        transition: var(--transition);
-        border-bottom: 1px solid var(--medium-brown);
+        transition: all 0.3s ease;
+        border-bottom: 1px solid var(--secondary-text);
     }
     
     .nav-links.active {
