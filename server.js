@@ -6,6 +6,9 @@ const axios = require('axios');
 const path = require('path');
 const cookieParser = require('cookie-parser'); // Add cookie-parser
 const jwt = require('jsonwebtoken');
+// At the top of your file
+const {OAuth2Client} = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID); // Add this to your .env file
 
 // Initialize Express app
 const app = express();
@@ -48,85 +51,99 @@ function logError(context, message, error) {
     }
 }
 
-// Authentication middleware
-const extractUserIdentity = (req, res, next) => {
-    try {
-        logInfo('Auth', 'Extracting user identity from request');
-        
-        // Get the Google ID token from multiple possible sources
-        let googleIdToken = null;
-        
-        // 1. Check standard header (from Azure Static Web Apps)
-        if (req.headers['x-ms-token-google-id-token']) {
-            googleIdToken = req.headers['x-ms-token-google-id-token'];
-            logInfo('Auth', 'Found Google ID token in headers');
-        } 
-        // 2. Check cookies (Azure Static Web Apps auth cookie)
-        else if (req.cookies && req.cookies['AppServiceAuthSession']) {
-            googleIdToken = req.cookies['AppServiceAuthSession'];
-            logInfo('Auth', 'Found Google ID token in cookies');
-        }
-        // 3. Check for custom auth header
-        else if (req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer ')) {
-            googleIdToken = req.headers['authorization'].substring(7);
-            logInfo('Auth', 'Found Google ID token in Authorization header');
-        }
-        
-        if (googleIdToken) {
-            // Log the token format (without revealing the full token)
-            const tokenPreview = googleIdToken.substring(0, 20) + '...' + googleIdToken.substring(googleIdToken.length - 10);
-            logInfo('Auth', `Token format: ${tokenPreview}`);
-            
-            // Decode the JWT token (without verification for now)
-            const decodedToken = jwt.decode(googleIdToken);
-            
-            if (decodedToken) {
-                // Extract user information from token
-                req.user = {
-                    id: decodedToken.sub || decodedToken.oid || decodedToken.userId, // Try multiple possible ID fields
-                    email: decodedToken.email || decodedToken.preferred_username,
-                    name: decodedToken.name || decodedToken.given_name,
-                    isAuthenticated: true
-                };
-                
-                logInfo('Auth', 'Successfully extracted user identity', {
-                    id: req.user.id,
-                    email: req.user.email,
-                    name: req.user.name
-                });
-            } else {
-                logError('Auth', 'Failed to decode token', { token: tokenPreview });
-                // For debugging purposes, log all available tokens and cookies
-                logInfo('Auth', 'Available request headers', {
-                    headers: Object.keys(req.headers),
-                    cookies: req.cookies ? Object.keys(req.cookies) : 'none'
-                });
-                req.user = { id: 'anonymous', isAuthenticated: false };
-            }
-        } else {
-            // Set a default user object for unauthenticated requests
-            logInfo('Auth', 'No token found, setting anonymous user');
-            // For debugging purposes, log all available headers and cookies
-            logInfo('Auth', 'Available authentication sources', {
-                headers: Object.keys(req.headers),
-                cookies: req.cookies ? Object.keys(req.cookies) : 'none'
-            });
-            req.user = {
-                id: 'anonymous',
-                isAuthenticated: false
-            };
-        }
-    } catch (error) {
-        logError('Auth', 'Error extracting user identity', error);
-        // Set default user for error cases
-        req.user = {
-            id: 'anonymous',
-            isAuthenticated: false
-        };
+// Authentication middleware - updated to verify tokens properly
+const extractUserIdentity = async (req, res, next) => {
+  try {
+    logInfo('Auth', 'Extracting user identity from request');
+    
+    // Get the Google ID token from multiple possible sources
+    let googleIdToken = null;
+    
+    // 1. Check standard header (from Azure Static Web Apps)
+    if (req.headers['x-ms-token-google-id-token']) {
+      googleIdToken = req.headers['x-ms-token-google-id-token'];
+      logInfo('Auth', 'Found Google ID token in headers');
+    } 
+    // 2. Check cookies (Azure Static Web Apps auth cookie)
+    else if (req.cookies && req.cookies['AppServiceAuthSession']) {
+      googleIdToken = req.cookies['AppServiceAuthSession'];
+      logInfo('Auth', 'Found Google ID token in cookies');
+    }
+    // 3. Check for custom auth header
+    else if (req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer ')) {
+      googleIdToken = req.headers['authorization'].substring(7);
+      logInfo('Auth', 'Found Google ID token in Authorization header');
     }
     
-    // Always continue to the next middleware
-    next();
+    if (googleIdToken) {
+      // Log the token format (without revealing the full token)
+      const tokenPreview = googleIdToken.substring(0, 20) + '...' + googleIdToken.substring(googleIdToken.length - 10);
+      logInfo('Auth', `Token format: ${tokenPreview}`);
+      
+      try {
+        // Properly verify the token instead of just decoding it
+        const ticket = await client.verifyIdToken({
+          idToken: googleIdToken,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        
+        // Get the payload from the verified token
+        const payload = ticket.getPayload();
+        
+        // Extract user information from verified token payload
+        req.user = {
+          id: payload.sub,
+          email: payload.email,
+          name: payload.name,
+          isAuthenticated: true
+        };
+        
+        logInfo('Auth', 'Successfully verified user identity', {
+          id: req.user.id,
+          email: req.user.email,
+          name: req.user.name
+        });
+      } catch (verificationError) {
+        // Token verification failed
+        logError('Auth', 'Token verification failed', verificationError);
+        
+        // For security, treat failed verification as unauthenticated
+        req.user = { id: 'anonymous', isAuthenticated: false };
+        
+        // For debugging purposes, log available headers and cookies
+        logInfo('Auth', 'Available request headers', {
+          headers: Object.keys(req.headers),
+          cookies: req.cookies ? Object.keys(req.cookies) : 'none'
+        });
+      }
+    } else {
+      // No token found
+      logInfo('Auth', 'No token found, setting anonymous user');
+      
+      // For debugging purposes, log all available headers and cookies
+      logInfo('Auth', 'Available authentication sources', {
+        headers: Object.keys(req.headers),
+        cookies: req.cookies ? Object.keys(req.cookies) : 'none'
+      });
+      
+      req.user = {
+        id: 'anonymous',
+        isAuthenticated: false
+      };
+    }
+  } catch (error) {
+    // Handle any other errors
+    logError('Auth', 'Error extracting user identity', error);
+    
+    // Set default user for error cases
+    req.user = {
+      id: 'anonymous',
+      isAuthenticated: false
+    };
+  }
+  
+  // Always continue to the next middleware
+  next();
 };
 
 // Authentication check middleware - redirects to landing page if not authenticated
