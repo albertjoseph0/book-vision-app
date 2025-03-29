@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortSelect = document.getElementById('sortSelect');
     const statusDiv = document.getElementById('status');
     const loader = document.getElementById('loader');
+    const bookCountElement = document.getElementById('bookCount');
     
     // Auth elements
     const signInButton = document.getElementById('signInButton');
@@ -26,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data) {
             console.log(data);
         }
+    }
+    
+    // Function to update the book count display
+    function updateBookCount(count) {
+        bookCountElement.textContent = `${count} Book${count !== 1 ? 's' : ''}`;
+        logDebug('BookCount', `Updated book count: ${count}`);
     }
     
     // Event listeners
@@ -59,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logDebug('Books', `Received ${books.length} books from server`, books);
             
             renderBooks(books);
+            updateBookCount(books.length); // Update the book count
         } catch (error) {
             console.error('Error loading books:', error);
             showStatus('Error loading books: ' + error.message, 'error');
@@ -108,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Reload books after successful scan
             logDebug('Upload', 'Scan successful, reloading books');
-            await fetchBooks();
+            await fetchBooks(); // Will update book count through fetchBooks()
             showStatus(`Success! ${result.added || 'New'} books added.`, 'success');
         } catch (error) {
             console.error('Error processing image:', error);
@@ -138,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         logDebug('Filter', `Found ${filtered.length} books matching filter`);
         renderBooks(filtered);
+        
+        // Note: We don't update the book count here as it should always show total books
     }
     
     function sortBooks() {
@@ -168,6 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         renderBooks(sorted);
+        
+        // Note: We don't update the book count here as it should always show total books
     }
     
     function renderBooks(booksToRender) {
@@ -384,6 +396,9 @@ document.addEventListener('DOMContentLoaded', () => {
             books = books.filter(book => book.id !== bookId);
             logDebug('Delete', `Book removed from data store, ${books.length} books remaining`);
             
+            // Update book count
+            updateBookCount(books.length);
+            
             // Remove book card from UI
             const bookCard = document.querySelector(`.book-card[data-id="${bookId}"]`);
             if (bookCard) {
@@ -441,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 azureAuth: azureAuthData,
                 clientState: {
                     books: books,
+                    bookCount: books.length,
                     elements: {
                         bookListEmpty: !bookList.children.length,
                         statusVisible: !!statusDiv.textContent,

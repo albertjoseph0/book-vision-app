@@ -6,7 +6,7 @@ CREATE TABLE books (
     date_added DATETIME DEFAULT GETDATE()
 );
 
--- ALTER TABLE books ADD user_id NVARCHAR(255) NOT NULL DEFAULT 'legacy';
+-- ALTER TABLE books ADD user_id NVARCHAR(255);
 -- ALTER TABLE books ADD user_email NVARCHAR(255);
 -- Optional: Add a unique constraint to prevent duplicates
 -- ALTER TABLE books ADD CONSTRAINT UQ_books_title_author UNIQUE (title, author);
