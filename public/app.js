@@ -233,12 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Authentication functions
+    // Authentication functions - Simplified to use Azure App Service authentication
     async function checkAuthStatus() {
         logDebug('Auth', 'Checking authentication status');
         
         try {
-            // Include credentials to ensure cookies are sent
+            // Azure Static Web Apps provides /.auth/me endpoint that returns user info 
             const response = await fetch('/.auth/me', {
                 credentials: 'include'
             });
@@ -274,48 +274,62 @@ document.addEventListener('DOMContentLoaded', () => {
         signInButton.style.display = 'none';
         userProfile.style.display = 'flex';
         
-        // Extract user info - properties depend on the provider (Google in this case)
-        // For Google, typical properties include: name, user_id, id_token, provider_name, user_claims
+        // Extract user information directly from Azure's response
+        // Azure provides user_claims array with typ/val pairs
+        let displayName = null;
+        let pictureUrl = null;
         
-        // Set user name - look for various possible claim types
-        let displayName = findUserClaim(userData, 'name');
+        if (userData && userData.user_claims) {
+            // Find name from standard claims
+            const nameClaim = userData.user_claims.find(c => 
+                c.typ === 'name' || 
+                c.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+            );
+            
+            if (nameClaim) {
+                displayName = nameClaim.val;
+            }
+            
+            // Fallback to email or preferred username
+            if (!displayName) {
+                const emailClaim = userData.user_claims.find(c => 
+                    c.typ === 'email' || 
+                    c.typ === 'preferred_username' ||
+                    c.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
+                );
+                if (emailClaim) {
+                    displayName = emailClaim.val;
+                }
+            }
+            
+            // Look for picture claim
+            const pictureClaim = userData.user_claims.find(c => 
+                c.typ === 'picture' || 
+                c.typ === 'urn:google:picture'
+            );
+            if (pictureClaim) {
+                pictureUrl = pictureClaim.val;
+            }
+        }
+        
+        // Use default if no name found
         if (!displayName) {
-            // Fallbacks
-            displayName = findUserClaim(userData, 'given_name') || 
-                          findUserClaim(userData, 'email') || 
-                          'User';
+            displayName = 'User';
         }
         
         userName.textContent = displayName;
         logDebug('Auth', `User display name set to: ${displayName}`);
         
-        // Try to get profile picture (if available)
-        const pictureUrl = findUserClaim(userData, 'picture');
+        // Set profile picture if available
         if (pictureUrl) {
             profilePicture.src = pictureUrl;
             profilePicture.style.display = 'block';
             logDebug('Auth', 'Profile picture set');
         } else {
-            // Use a default avatar or hide the image
+            // Use a default avatar
             profilePicture.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23bbb"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
             logDebug('Auth', 'Using default profile picture');
         }
-    }
-    
-    // Helper function to find a specific claim in the user data
-    function findUserClaim(userData, claimType) {
-        if (!userData || !userData.user_claims) {
-            logDebug('Auth', `No user claims found for claim type: ${claimType}`);
-            return null;
-        }
-        
-        const claim = userData.user_claims.find(claim => 
-            claim.typ === claimType || 
-            claim.type === claimType
-        );
-        
-        logDebug('Auth', `Claim search for "${claimType}": ${claim ? 'found' : 'not found'}`);
-        return claim ? claim.val : null;
     }
     
     // Book deletion functions
@@ -426,13 +440,21 @@ document.addEventListener('DOMContentLoaded', () => {
         logDebug('Diagnostics', 'Running diagnostics');
         
         try {
-            // Check authentication status using our new endpoint
+            // Check authentication status
             console.log('%c👤 Authentication Status Check', 'font-size: 14px; font-weight: bold; color: #704214;');
             const authResponse = await fetch('/api/auth-status', {
                 credentials: 'include'
             });
             const authStatus = await authResponse.json();
             console.log(authStatus);
+            
+            // Check Azure's built-in auth endpoint
+            console.log('%c🔐 Azure Auth Endpoint', 'font-size: 14px; font-weight: bold; color: #704214;');
+            const azureAuthResponse = await fetch('/.auth/me', {
+                credentials: 'include'
+            });
+            const azureAuthData = await azureAuthResponse.json();
+            console.log(azureAuthData);
             
             // Check database connection and schema
             console.log('%c📊 Book Vision App Diagnostics', 'font-size: 16px; font-weight: bold; color: #704214;');
@@ -442,18 +464,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const diagnosticData = await response.json();
             console.log(diagnosticData);
             
-            // Test Azure's built-in auth endpoint
-            console.log('%c🔐 Azure Auth Endpoint', 'font-size: 14px; font-weight: bold; color: #704214;');
-            const azureAuthResponse = await fetch('/.auth/me', {
-                credentials: 'include'
-            });
-            const azureAuthData = await azureAuthResponse.json();
-            console.log(azureAuthData);
-            
             return {
                 authStatus: authStatus,
-                diagnostics: diagnosticData,
                 azureAuth: azureAuthData,
+                diagnostics: diagnosticData,
                 clientState: {
                     books: books,
                     bookCount: books.length,
@@ -470,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Add auth refresh button - can be used for troubleshooting
+    // Add auth refresh function - can be used for troubleshooting
     window.refreshAuth = async function() {
         logDebug('Auth', 'Manually refreshing authentication');
         await checkAuthStatus();
