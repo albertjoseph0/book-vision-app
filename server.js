@@ -4,11 +4,7 @@ const multer = require('multer');
 const sql = require('mssql');
 const axios = require('axios');
 const path = require('path');
-const cookieParser = require('cookie-parser'); // Add cookie-parser
-const jwt = require('jsonwebtoken');
-// At the top of your file
-const {OAuth2Client} = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID); // Add this to your .env file
+const cookieParser = require('cookie-parser');
 
 // Initialize Express app
 const app = express();
@@ -16,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 // Add comprehensive security headers
 app.use((req, res, next) => {
-    // HSTS header - already implemented
+    // HSTS header
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     
     // Prevents MIME type sniffing
@@ -41,9 +37,9 @@ app.use((req, res, next) => {
         "font-src 'self' https://cdnjs.cloudflare.com; " +
         "frame-src https://accounts.google.com/gsi/ 'self'; " +
         "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com;"
-      );
+    );
     next();
-  });
+});
   
 // Apply cookie-parser middleware
 app.use(cookieParser());
@@ -82,99 +78,90 @@ function logError(context, message, error) {
     }
 }
 
-// Authentication middleware - updated to verify tokens properly
-const extractUserIdentity = async (req, res, next) => {
-  try {
-    logInfo('Auth', 'Extracting user identity from request');
-    
-    // Get the Google ID token from multiple possible sources
-    let googleIdToken = null;
-    
-    // 1. Check standard header (from Azure Static Web Apps)
-    if (req.headers['x-ms-token-google-id-token']) {
-      googleIdToken = req.headers['x-ms-token-google-id-token'];
-      logInfo('Auth', 'Found Google ID token in headers');
-    } 
-    // 2. Check cookies (Azure Static Web Apps auth cookie)
-    else if (req.cookies && req.cookies['AppServiceAuthSession']) {
-      googleIdToken = req.cookies['AppServiceAuthSession'];
-      logInfo('Auth', 'Found Google ID token in cookies');
-    }
-    // 3. Check for custom auth header
-    else if (req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer ')) {
-      googleIdToken = req.headers['authorization'].substring(7);
-      logInfo('Auth', 'Found Google ID token in Authorization header');
-    }
-    
-    if (googleIdToken) {
-      // Log the token format (without revealing the full token)
-      const tokenPreview = googleIdToken.substring(0, 20) + '...' + googleIdToken.substring(googleIdToken.length - 10);
-      logInfo('Auth', `Token format: ${tokenPreview}`);
-      
-      try {
-        // Properly verify the token instead of just decoding it
-        const ticket = await client.verifyIdToken({
-          idToken: googleIdToken,
-          audience: process.env.GOOGLE_CLIENT_ID,
-        });
+// Updated authentication middleware - uses Azure's built-in authentication
+const extractUserIdentity = (req, res, next) => {
+    try {
+        logInfo('Auth', 'Extracting user identity from Azure headers');
         
-        // Get the payload from the verified token
-        const payload = ticket.getPayload();
+        // Get the principal ID directly from Azure's headers
+        const principalId = req.headers['x-ms-client-principal-id'];
+        const principalName = req.headers['x-ms-client-principal-name'];
+        const identityProvider = req.headers['x-ms-client-principal-idp'];
         
-        // Extract user information from verified token payload
+        // Check for the full client principal header (base64 encoded JSON)
+        const clientPrincipalHeader = req.headers['x-ms-client-principal'];
+        let decodedClaims = [];
+        
+        if (clientPrincipalHeader) {
+            try {
+                // Decode the base64 encoded JSON
+                const decodedJson = Buffer.from(clientPrincipalHeader, 'base64').toString('utf8');
+                const clientPrincipal = JSON.parse(decodedJson);
+                
+                // Log the principal structure without sensitive info
+                logInfo('Auth', 'Decoded client principal structure', {
+                    auth_typ: clientPrincipal.auth_typ,
+                    has_claims: Array.isArray(clientPrincipal.claims) && clientPrincipal.claims.length > 0,
+                    claims_count: clientPrincipal.claims ? clientPrincipal.claims.length : 0
+                });
+                
+                decodedClaims = clientPrincipal.claims || [];
+            } catch (decodeError) {
+                logError('Auth', 'Error decoding client principal', decodeError);
+            }
+        }
+        
+        // Find email from claims if not available in principal name
+        let email = principalName;
+        if (!email && decodedClaims.length > 0) {
+            const emailClaim = decodedClaims.find(
+                claim => claim.typ === 'preferred_username' || 
+                         claim.typ === 'email' || 
+                         claim.typ === 'unique_name'
+            );
+            if (emailClaim) {
+                email = emailClaim.val;
+            }
+        }
+        
+        // Set user info on the request object
+        if (principalId) {
+            req.user = {
+                id: principalId,
+                email: email,
+                name: principalName,
+                provider: identityProvider,
+                isAuthenticated: true,
+                claims: decodedClaims
+            };
+            
+            logInfo('Auth', 'Successfully extracted user identity', {
+                id: req.user.id,
+                email: req.user.email,
+                provider: req.user.provider
+            });
+        } else {
+            // No authentication information found
+            req.user = {
+                id: 'anonymous',
+                isAuthenticated: false
+            };
+            
+            logInfo('Auth', 'No authentication information found, setting anonymous user');
+        }
+    } catch (error) {
+        // Handle any errors
+        logError('Auth', 'Error extracting user identity', error);
+        
+        // Set default user for error cases
         req.user = {
-          id: payload.sub,
-          email: payload.email,
-          name: payload.name,
-          isAuthenticated: true
+            id: 'anonymous',
+            isAuthenticated: false
         };
-        
-        logInfo('Auth', 'Successfully verified user identity', {
-          id: req.user.id,
-          email: req.user.email,
-          name: req.user.name
-        });
-      } catch (verificationError) {
-        // Token verification failed
-        logError('Auth', 'Token verification failed', verificationError);
-        
-        // For security, treat failed verification as unauthenticated
-        req.user = { id: 'anonymous', isAuthenticated: false };
-        
-        // For debugging purposes, log available headers and cookies
-        logInfo('Auth', 'Available request headers', {
-          headers: Object.keys(req.headers),
-          cookies: req.cookies ? Object.keys(req.cookies) : 'none'
-        });
-      }
-    } else {
-      // No token found
-      logInfo('Auth', 'No token found, setting anonymous user');
-      
-      // For debugging purposes, log all available headers and cookies
-      logInfo('Auth', 'Available authentication sources', {
-        headers: Object.keys(req.headers),
-        cookies: req.cookies ? Object.keys(req.cookies) : 'none'
-      });
-      
-      req.user = {
-        id: 'anonymous',
-        isAuthenticated: false
-      };
     }
-  } catch (error) {
-    // Handle any other errors
-    logError('Auth', 'Error extracting user identity', error);
     
-    // Set default user for error cases
-    req.user = {
-      id: 'anonymous',
-      isAuthenticated: false
-    };
-  }
-  
-  // Always continue to the next middleware
-  next();
+    // Always continue to the next middleware
+    next();
 };
 
 // Authentication check middleware - redirects to landing page if not authenticated
@@ -672,8 +659,10 @@ app.get('/api/diagnostics', requireAuth, async (req, res) => {
         // Get a list of auth related headers and cookies
         const authSources = {
             headers: {
-                'x-ms-token-google-id-token': !!req.headers['x-ms-token-google-id-token'],
-                'authorization': req.headers['authorization'] ? 'present' : 'absent',
+                'x-ms-client-principal-id': !!req.headers['x-ms-client-principal-id'],
+                'x-ms-client-principal-name': !!req.headers['x-ms-client-principal-name'],
+                'x-ms-client-principal-idp': req.headers['x-ms-client-principal-idp'] || 'none',
+                'x-ms-client-principal': !!req.headers['x-ms-client-principal'],
                 otherHeaders: Object.keys(req.headers)
             },
             cookies: req.cookies ? Object.keys(req.cookies) : []
@@ -709,8 +698,10 @@ app.get('/api/auth-status', async (req, res) => {
     // Check available authentication sources
     const authSources = {
         headers: {
-            'x-ms-token-google-id-token': req.headers['x-ms-token-google-id-token'] ? 'present' : 'absent',
-            'authorization': req.headers['authorization'] ? 'present' : 'absent',
+            'x-ms-client-principal-id': req.headers['x-ms-client-principal-id'] || 'none',
+            'x-ms-client-principal-name': req.headers['x-ms-client-principal-name'] || 'none',
+            'x-ms-client-principal-idp': req.headers['x-ms-client-principal-idp'] || 'none',
+            'x-ms-client-principal': !!req.headers['x-ms-client-principal']
         },
         cookies: req.cookies ? Object.keys(req.cookies) : [],
         user: {
