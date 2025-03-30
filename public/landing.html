@@ -39,7 +39,10 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="https://source.unsplash.com/random/600x400/?bookshelf" alt="Bookshelf scanned with AI" class="hero-img">
+                <video id="demoVideo" class="hero-img" autoplay muted playsinline controls>
+                    <source src="demo.mov" type="video/quicktime">
+                    Your browser does not support the video tag.
+                </video>
             </div>
         </div>
     </section>
@@ -225,6 +228,18 @@
                         behavior: 'smooth'
                     });
                 }
+            });
+        });
+        
+        // Video replay with 5-second delay
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('demoVideo');
+            
+            // When the video ends, wait 5 seconds before replaying
+            video.addEventListener('ended', function() {
+                setTimeout(function() {
+                    video.play();
+                }, 5000); // 5000 milliseconds (5 seconds)
             });
         });
     </script>
