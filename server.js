@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const {OAuth2Client} = require('google-auth-library');
 const rateLimit = require('express-rate-limit'); // Added for rate limiting
+const csrf = require('csurf'); // Added for CSRF protection
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Initialize Express app
@@ -47,6 +48,30 @@ app.use((req, res, next) => {
   
 // Apply cookie-parser middleware
 app.use(cookieParser());
+
+// Configure secure cookies
+app.use((req, res, next) => {
+    res.cookie('cookieName', 'cookieValue', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+    next();
+});
+
+// Parse JSON and urlencoded form data - needed for CSRF to work with forms
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Setup CSRF protection
+const csrfProtection = csrf({ 
+    cookie: {
+        key: '_csrf',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    }
+});
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -219,6 +244,18 @@ const scanRateLimiter = rateLimit({
     }
 });
 
+// Error handler for CSRF errors
+app.use(function (err, req, res, next) {
+    if (err.code !== 'EBADCSRFTOKEN') return next(err);
+    
+    // Handle CSRF token errors
+    logError('CSRF', 'Invalid CSRF token', err);
+    res.status(403).json({
+        status: 'error',
+        message: 'Security validation failed. Please refresh the page and try again.'
+    });
+});
+
 // Set landing page as the default route
 app.get('/', (req, res) => {
     logInfo('Routes', 'Serving landing page');
@@ -227,15 +264,21 @@ app.get('/', (req, res) => {
 
 // Route for the main app after clicking 'Get Started' or any CTA button
 // Now protected with authentication requirement
-app.get('/app', requireAuth, (req, res) => {
+app.get('/app', requireAuth, csrfProtection, (req, res) => {
     logInfo('Routes', 'Serving main app page to authenticated user', {
         userId: req.user.id,
         userEmail: req.user.email
     });
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    
+    // Render the page with the CSRF token
+    res.setHeader('Content-Type', 'text/html');
+    const html = require('fs').readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
+        .replace('<!-- CSRF_TOKEN -->', `<meta name="csrf-token" content="${req.csrfToken()}">`);
+    
+    res.send(html);
 });
 
-// Serve static files - moved after route definitions
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Database configuration
@@ -407,8 +450,13 @@ function parseVisionResponse(responseData) {
 
 // API Routes
 
+// CSRF token endpoint
+app.get('/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
+
 // Get all books - protected with authentication
-app.get('/books', requireAuth, async (req, res) => {
+app.get('/books', requireAuth, csrfProtection, async (req, res) => {
     logInfo('API', 'Books GET request', {
         userId: req.user.id,
         userEmail: req.user.email
@@ -440,7 +488,11 @@ app.get('/books', requireAuth, async (req, res) => {
             firstFewBooks: result.recordset.slice(0, 3)
         });
         
-        res.json(result.recordset);
+        // Include CSRF token with the response
+        res.json({
+            books: result.recordset,
+            csrfToken: req.csrfToken()
+        });
         
     } catch (error) {
         logError('API', 'Error fetching books', error);
@@ -448,8 +500,8 @@ app.get('/books', requireAuth, async (req, res) => {
     }
 });
 
-// Delete a book (secure version) - protected with authentication
-app.delete('/books/:id', requireAuth, async (req, res) => {
+// Delete a book (secure version) - protected with authentication and CSRF
+app.delete('/books/:id', requireAuth, csrfProtection, async (req, res) => {
     const bookId = req.params.id;
     
     logInfo('API', 'Delete book request', {
@@ -489,7 +541,10 @@ app.delete('/books/:id', requireAuth, async (req, res) => {
             });
         }
         
-        res.status(200).json({ message: 'Book deleted successfully' });
+        res.status(200).json({ 
+            message: 'Book deleted successfully',
+            csrfToken: req.csrfToken() // Send a new token for the next operation
+        });
         
     } catch (error) {
         logError('API', 'Error deleting book', error);
@@ -497,8 +552,8 @@ app.delete('/books/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Scan and process bookshelf photo - protected with authentication AND rate limiting
-app.post('/scan', requireAuth, scanRateLimiter, upload.single('photo'), async (req, res) => {
+// Scan and process bookshelf photo - protected with authentication, rate limiting, and CSRF
+app.post('/scan', requireAuth, scanRateLimiter, csrfProtection, upload.single('photo'), async (req, res) => {
     logInfo('API', 'Scan photo request received', {
         userId: req.user.id,
         userEmail: req.user.email,
@@ -566,7 +621,11 @@ app.post('/scan', requireAuth, scanRateLimiter, upload.single('photo'), async (r
         
         if (books.length === 0) {
             logInfo('API', 'No books detected in the image');
-            return res.status(200).json({ message: 'No books detected in the image', added: 0 });
+            return res.status(200).json({ 
+                message: 'No books detected in the image', 
+                added: 0,
+                csrfToken: req.csrfToken() // Send a new token for the next operation
+            });
         }
         
         // Verify database schema before proceeding
@@ -658,7 +717,8 @@ app.post('/scan', requireAuth, scanRateLimiter, upload.single('photo'), async (r
         res.status(200).json({ 
             message: 'Books processed successfully', 
             total: books.length,
-            added: added
+            added: added,
+            csrfToken: req.csrfToken() // Send a new token for the next operation
         });
         
     } catch (error) {
@@ -668,7 +728,7 @@ app.post('/scan', requireAuth, scanRateLimiter, upload.single('photo'), async (r
 });
 
 // Add a diagnostic endpoint to check database connection and schema
-app.get('/api/diagnostics', requireAuth, async (req, res) => {
+app.get('/api/diagnostics', requireAuth, csrfProtection, async (req, res) => {
     logInfo('API', 'Database diagnostics request');
     
     try {
@@ -715,7 +775,8 @@ app.get('/api/diagnostics', requireAuth, async (req, res) => {
                 isAuthenticated: req.user.isAuthenticated
             },
             authSources: authSources,
-            system: systemInfo
+            system: systemInfo,
+            csrfToken: req.csrfToken() // Include CSRF token
         });
     } catch (error) {
         logError('API', 'Error in diagnostics endpoint', error);
@@ -727,7 +788,7 @@ app.get('/api/diagnostics', requireAuth, async (req, res) => {
 });
 
 // Add an endpoint to check current auth status
-app.get('/api/auth-status', async (req, res) => {
+app.get('/api/auth-status', csrfProtection, async (req, res) => {
     logInfo('API', 'Auth status check requested');
     
     // Check available authentication sources
@@ -747,7 +808,8 @@ app.get('/api/auth-status', async (req, res) => {
         authenticated: req.user.isAuthenticated,
         userId: req.user.id,
         userEmail: req.user.email,
-        authSources: authSources
+        authSources: authSources,
+        csrfToken: req.csrfToken() // Include CSRF token
     });
 });
 

@@ -20,6 +20,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Data store
     let books = [];
+    let csrfToken = ''; // Store CSRF token
+    
+    // Get CSRF token from meta tag
+    function getCsrfToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        return '';
+    }
+    
+    // Initialize CSRF token
+    csrfToken = getCsrfToken();
     
     // Debug log function
     function logDebug(context, message, data = null) {
@@ -53,7 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Include credentials to ensure cookies are sent
             const response = await fetch('/books', {
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'CSRF-Token': csrfToken // Include CSRF token in request
+                }
             });
             logDebug('Books', `Fetch response status: ${response.status}`);
             
@@ -62,7 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`Failed to fetch books: ${response.status} ${errorText}`);
             }
             
-            books = await response.json();
+            const data = await response.json();
+            
+            // Update CSRF token if provided in response
+            if (data.csrfToken) {
+                csrfToken = data.csrfToken;
+                logDebug('CSRF', 'Updated CSRF token from books response');
+            }
+            
+            // Handle new response format with books array
+            books = data.books || data;
             logDebug('Books', `Received ${books.length} books from server`, books);
             
             renderBooks(books);
@@ -88,6 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const formData = new FormData();
         formData.append('photo', photo);
+        // Add CSRF token to form data
+        formData.append('_csrf', csrfToken);
         
         // Show loading state
         loader.style.display = 'block';
@@ -102,13 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/scan', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'CSRF-Token': csrfToken // Also include in headers for extra protection
+                }
             });
             
             logDebug('Upload', `Scan response status: ${response.status}`);
             
             const result = await response.json();
             logDebug('Upload', 'Scan result received', result);
+            
+            // Update CSRF token if provided in response
+            if (result.csrfToken) {
+                csrfToken = result.csrfToken;
+                logDebug('CSRF', 'Updated CSRF token from scan response');
+            }
             
             if (!response.ok) {
                 throw new Error(result.message || result.error || 'Failed to process image');
@@ -396,14 +432,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Include credentials to ensure cookies are sent
             const response = await fetch(`/books/${bookId}`, {
                 method: 'DELETE',
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'CSRF-Token': csrfToken // Include CSRF token in the request
+                }
             });
             
             logDebug('Delete', `Delete response status: ${response.status}`);
             
+            const responseData = await response.json();
+            
+            // Update CSRF token if provided in response
+            if (responseData.csrfToken) {
+                csrfToken = responseData.csrfToken;
+                logDebug('CSRF', 'Updated CSRF token from delete response');
+            }
+            
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Failed to delete book');
+                throw new Error(responseData.message || responseData.error || 'Failed to delete book');
             }
             
             // Remove book from data store
@@ -435,6 +481,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // CSRF token refresh function
+    async function refreshCsrfToken() {
+        try {
+            const response = await fetch('/csrf-token', {
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.csrfToken) {
+                    csrfToken = data.csrfToken;
+                    logDebug('CSRF', 'Successfully refreshed CSRF token');
+                    return true;
+                }
+            }
+            
+            logDebug('CSRF', 'Failed to refresh CSRF token');
+            return false;
+        } catch (error) {
+            console.error('Error refreshing CSRF token:', error);
+            return false;
+        }
+    }
+    
     // Add diagnostic function - accessible from browser console
     window.runDiagnostics = async function() {
         logDebug('Diagnostics', 'Running diagnostics');
@@ -443,9 +513,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check authentication status
             console.log('%c👤 Authentication Status Check', 'font-size: 14px; font-weight: bold; color: #704214;');
             const authResponse = await fetch('/api/auth-status', {
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'CSRF-Token': csrfToken
+                }
             });
             const authStatus = await authResponse.json();
+            
+            // Update CSRF token if provided
+            if (authStatus.csrfToken) {
+                csrfToken = authStatus.csrfToken;
+                logDebug('CSRF', 'Updated CSRF token from auth status response');
+            }
+            
             console.log(authStatus);
             
             // Check Azure's built-in auth endpoint
@@ -459,9 +539,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check database connection and schema
             console.log('%c📊 Book Vision App Diagnostics', 'font-size: 16px; font-weight: bold; color: #704214;');
             const response = await fetch('/api/diagnostics', {
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'CSRF-Token': csrfToken
+                }
             });
             const diagnosticData = await response.json();
+            
+            // Update CSRF token if provided
+            if (diagnosticData.csrfToken) {
+                csrfToken = diagnosticData.csrfToken;
+                logDebug('CSRF', 'Updated CSRF token from diagnostics response');
+            }
+            
             console.log(diagnosticData);
             
             return {
@@ -471,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clientState: {
                     books: books,
                     bookCount: books.length,
+                    csrfToken: csrfToken ? 'Present (hidden)' : 'Missing',
                     elements: {
                         bookListEmpty: !bookList.children.length,
                         statusVisible: !!statusDiv.textContent,
@@ -491,7 +582,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'Authentication refresh completed';
     };
     
+    // Add CSRF token refresh function - can be used for troubleshooting
+    window.refreshCsrf = async function() {
+        logDebug('CSRF', 'Manually refreshing CSRF token');
+        const success = await refreshCsrfToken();
+        return success ? 'CSRF token refresh completed' : 'CSRF token refresh failed';
+    };
+    
     console.log('Book Vision App initialized. For troubleshooting:');
     console.log('- Run window.runDiagnostics() for detailed diagnostic info');
     console.log('- Run window.refreshAuth() to refresh authentication state');
+    console.log('- Run window.refreshCsrf() to refresh CSRF token');
 });
