@@ -519,6 +519,110 @@ section:after {
     font-style: italic;
 }
 
+/* Pricing Section */
+.pricing {
+    background-color: var(--background);
+    position: relative;
+}
+
+.pricing-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+}
+
+.pricing-card {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--secondary-text);
+    max-width: 500px;
+    width: 100%;
+    padding: 40px;
+    box-shadow: 5px 5px 15px var(--shadow);
+    transition: all 0.3s ease;
+    position: relative;
+    border-radius: 4px;
+}
+
+.pricing-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: var(--accent);
+    opacity: 0.9;
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 10px 10px 20px var(--shadow);
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--accent);
+}
+
+.pricing-header h3 {
+    font-size: 1.8rem;
+    color: var(--primary-text);
+    margin-bottom: 15px;
+    font-weight: 700;
+    font-style: italic;
+}
+
+.price {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.price .amount {
+    font-size: 3.5rem;
+    color: var(--accent);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.price .period {
+    font-size: 1.1rem;
+    color: var(--secondary-text);
+    font-style: italic;
+}
+
+.feature-list {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.feature-list li {
+    padding: 12px 0;
+    border-bottom: 1px dotted var(--secondary-text);
+    color: var(--primary-text);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list li i {
+    color: var(--accent);
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.pricing-footer {
+    text-align: center;
+    margin-top: 30px;
+}
+
 /* CTA Section */
 .cta-section {
     background: linear-gradient(120deg, var(--secondary-text), var(--primary-text));
@@ -769,6 +873,18 @@ section:after {
     
     .testimonial-card:hover {
         transform: translateY(-5px);
+    }
+    
+    .pricing-card {
+        padding: 30px 20px;
+    }
+    
+    .pricing-header h3 {
+        font-size: 1.5rem;
+    }
+    
+    .price .amount {
+        font-size: 3rem;
     }
 }
 
