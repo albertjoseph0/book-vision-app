@@ -34,12 +34,12 @@ app.use((req, res, next) => {
     res.setHeader(
         'Content-Security-Policy',
         "default-src 'self'; " +
-        "img-src 'self' data: https://source.unsplash.com https://i.pravatar.cc https://*.googleusercontent.com; " +
-        "script-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/client 'unsafe-inline'; " +
+        "img-src 'self' data: https://source.unsplash.com https://i.pravatar.cc https://*.googleusercontent.com https://www.googletagmanager.com; " +
+        "script-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/client https://www.googletagmanager.com 'unsafe-inline'; " +
         "style-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/style 'unsafe-inline'; " +
         "font-src 'self' https://cdnjs.cloudflare.com; " +
         "frame-src https://accounts.google.com/gsi/ 'self'; " +
-        "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com;"
+        "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com https://www.googletagmanager.com;"
       );
     next();
   });
