@@ -6,7 +6,6 @@ const axios = require('axios');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit'); // Added for rate limiting
 const csrf = require('csurf'); // Added for CSRF protection
 
 // Initialize Express app
@@ -211,29 +210,101 @@ const requireAuth = (req, res, next) => {
 // Apply the authentication middleware to all routes
 app.use(extractUserIdentity);
 
-// Create scan endpoint rate limiter
-const scanRateLimiter = rateLimit({
-    windowMs: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-    max: 10, // Limit each user to 10 scan requests per day
-    message: { 
-        status: 'error', 
-        message: 'Too many upload requests. Limit is 10 uploads per day per user.' 
-    },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    // Use user ID as the key for rate limiting
-    keyGenerator: function (req) {
-        // Use user ID from authentication middleware
-        return req.user.id || req.ip; // Fall back to IP if user ID not available
-    },
-    // Log rate limit hits
-    onLimitReached: function (req, res, options) {
-        logInfo('RateLimit', 'Scan rate limit reached', {
-            userId: req.user.id,
-            ip: req.ip
+// NEW: Database rate limiter middleware
+// Replaces the express-rate-limit package with database-driven rate limiting
+const dbScanRateLimiter = async (req, res, next) => {
+    try {
+        logInfo('RateLimit', 'Checking scan rate limit', {
+            userId: req.user.id
         });
+        
+        if (!req.user || !req.user.id || req.user.id === 'anonymous') {
+            logError('RateLimit', 'User not properly authenticated for rate limiting');
+            return res.status(401).json({
+                status: 'error',
+                message: 'Authentication required for this operation'
+            });
+        }
+        
+        const pool = await getDbPool();
+        
+        // Count scans in the last 24 hours for this user
+        const query = `
+            SELECT COUNT(*) as scan_count 
+            FROM user_scans 
+            WHERE user_id = @userId 
+            AND scan_time > DATEADD(hour, -24, GETDATE())
+        `;
+        
+        const countResult = await pool.request()
+            .input('userId', sql.NVarChar, req.user.id)
+            .query(query);
+        
+        const scanCount = countResult.recordset[0].scan_count;
+        
+        logInfo('RateLimit', 'User scan count in last 24 hours', {
+            userId: req.user.id,
+            scanCount: scanCount,
+            limit: 10
+        });
+        
+        // Check if user has reached the limit (10 scans per 24 hours)
+        if (scanCount >= 10) {
+            logInfo('RateLimit', 'Scan rate limit reached', {
+                userId: req.user.id,
+                scanCount: scanCount
+            });
+            
+            return res.status(429).json({
+                status: 'error',
+                message: 'Too many upload requests. Limit is 10 uploads per day per user.'
+            });
+        }
+        
+        // Add rate limit headers for consistent client experience
+        res.setHeader('X-RateLimit-Limit', 10);
+        res.setHeader('X-RateLimit-Remaining', 10 - scanCount);
+        
+        // Continue to the next middleware
+        next();
+    } catch (error) {
+        logError('RateLimit', 'Error checking scan rate limit', error);
+        
+        // In case of database error, allow the request to proceed
+        // to prevent blocking users due to our system error
+        next();
     }
-});
+};
+
+// New function to record successful scans
+async function recordSuccessfulScan(userId, fileName = null) {
+    try {
+        logInfo('RateLimit', 'Recording successful scan', {
+            userId: userId,
+            fileName: fileName
+        });
+        
+        const pool = await getDbPool();
+        
+        // Insert record of successful scan
+        const query = `
+            INSERT INTO user_scans (user_id, scan_file_name, scan_status) 
+            VALUES (@userId, @fileName, 'completed')
+        `;
+        
+        await pool.request()
+            .input('userId', sql.NVarChar, userId)
+            .input('fileName', sql.NVarChar, fileName || null)
+            .query(query);
+        
+        logInfo('RateLimit', 'Successfully recorded scan in database');
+        
+        return true;
+    } catch (error) {
+        logError('RateLimit', 'Error recording scan in database', error);
+        return false;
+    }
+}
 
 // Error handler for CSRF errors
 app.use(function (err, req, res, next) {
@@ -329,16 +400,41 @@ async function verifyDatabaseSchema() {
         const requiredColumns = ['id', 'title', 'author', 'date_added', 'user_id', 'user_email'];
         const missingColumns = requiredColumns.filter(col => !columns.includes(col));
         
+        // Check if the user_scans table exists
+        const userScansTableResult = await pool.request().query(`
+            SELECT COUNT(*) as table_exists
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_NAME = 'user_scans'
+        `);
+        
+        const userScansTableExists = userScansTableResult.recordset[0].table_exists > 0;
+        logInfo('Database', 'user_scans table exists:', userScansTableExists);
+        
         if (missingColumns.length > 0) {
             logError('Database', 'Missing required columns in books table', missingColumns);
         } else {
             logInfo('Database', 'All required columns present in books table');
         }
         
+        // Check for user_scans table schema if it exists
+        let userScanColumns = [];
+        if (userScansTableExists) {
+            const scanColumnsResult = await pool.request().query(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'user_scans'
+            `);
+            
+            userScanColumns = scanColumnsResult.recordset.map(record => record.COLUMN_NAME);
+            logInfo('Database', 'Found columns in user_scans table', userScanColumns);
+        }
+        
         return {
-            valid: missingColumns.length === 0,
-            columns: columns,
-            missingColumns: missingColumns
+            valid: missingColumns.length === 0 && userScansTableExists,
+            booksColumns: columns,
+            missingBooksColumns: missingColumns,
+            userScansTableExists: userScansTableExists,
+            userScansColumns: userScanColumns
         };
     } catch (error) {
         logError('Database', 'Error verifying database schema', error);
@@ -543,8 +639,9 @@ app.delete('/books/:id', requireAuth, csrfProtection, async (req, res) => {
     }
 });
 
-// Scan and process bookshelf photo - protected with authentication, rate limiting, and CSRF
-app.post('/scan', requireAuth, scanRateLimiter, csrfProtection, upload.single('photo'), async (req, res) => {
+// Scan and process bookshelf photo - protected with authentication and CSRF
+// Now uses database rate limiting middleware instead of express-rate-limit
+app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single('photo'), async (req, res) => {
     logInfo('API', 'Scan photo request received', {
         userId: req.user.id,
         userEmail: req.user.email,
@@ -612,6 +709,10 @@ app.post('/scan', requireAuth, scanRateLimiter, csrfProtection, upload.single('p
         
         if (books.length === 0) {
             logInfo('API', 'No books detected in the image');
+            
+            // Record the scan attempt even if no books were found
+            await recordSuccessfulScan(req.user.id, req.file.originalname || 'unnamed_file');
+            
             return res.status(200).json({ 
                 message: 'No books detected in the image', 
                 added: 0,
@@ -705,6 +806,9 @@ app.post('/scan', requireAuth, scanRateLimiter, csrfProtection, upload.single('p
             added: added
         });
         
+        // Record successful scan in the user_scans table
+        await recordSuccessfulScan(req.user.id, req.file.originalname || 'unnamed_file');
+        
         res.status(200).json({ 
             message: 'Books processed successfully', 
             total: books.length,
@@ -729,6 +833,20 @@ app.get('/api/diagnostics', requireAuth, csrfProtection, async (req, res) => {
         // Test database connection
         const pool = await getDbPool();
         const connectionTest = { success: true };
+        
+        // Get scan usage information
+        const scanUsageQuery = `
+            SELECT COUNT(*) as total_scans,
+                   COUNT(CASE WHEN scan_time > DATEADD(hour, -24, GETDATE()) THEN 1 END) as scans_last_24h
+            FROM user_scans 
+            WHERE user_id = @userId
+        `;
+        
+        const scanUsageResult = await pool.request()
+            .input('userId', sql.NVarChar, req.user.id)
+            .query(scanUsageQuery);
+        
+        const scanUsage = scanUsageResult.recordset[0];
         
         // Get some system information
         const systemInfo = {
@@ -758,6 +876,10 @@ app.get('/api/diagnostics', requireAuth, csrfProtection, async (req, res) => {
             database: {
                 connection: connectionTest,
                 schema: schemaVerification
+            },
+            rateLimit: {
+                scanUsage: scanUsage,
+                remainingToday: 10 - (scanUsage.scans_last_24h || 0)
             },
             user: {
                 id: req.user.id,
@@ -808,6 +930,30 @@ verifyDatabaseSchema()
             console.error('\n=======================================');
             console.error('WARNING: DATABASE SCHEMA ISSUES DETECTED');
             console.error('=======================================\n');
+            
+            // Check if user_scans table exists, create it if needed
+            if (!result.userScansTableExists) {
+                console.error('Missing user_scans table - attempting to create it');
+                
+                // Create the user_scans table
+                getDbPool().then(pool => {
+                    return pool.request().query(`
+                        CREATE TABLE user_scans (
+                            id INT IDENTITY(1,1) PRIMARY KEY,
+                            user_id NVARCHAR(255) NOT NULL,
+                            scan_time DATETIME DEFAULT GETDATE(),
+                            scan_file_name NVARCHAR(255) NULL,
+                            scan_status NVARCHAR(50) DEFAULT 'completed'
+                        );
+                    `);
+                })
+                .then(() => {
+                    console.log('Successfully created user_scans table');
+                })
+                .catch(err => {
+                    console.error('Failed to create user_scans table:', err);
+                });
+            }
         } else {
             logInfo('Startup', 'Database schema verification passed');
         }
