@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // Reset loader and file input
             loader.style.display = 'none';
-            bookList.style.display = 'grid';
+            bookList.style.display = 'table'; // Updated to 'table' for the new layout
             photoUpload.value = '';
             logDebug('Upload', 'Upload process completed');
         }
@@ -220,36 +220,61 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderBooks(booksToRender) {
         logDebug('Render', `Rendering ${booksToRender.length} books`);
-        bookList.innerHTML = '';
+        
+        // Create a table if it doesn't exist already
+        if (!bookList.querySelector('table')) {
+            bookList.innerHTML = `
+                <table class="book-table">
+                    <thead>
+                        <tr>
+                            <th class="title-column">Title</th>
+                            <th class="author-column">Author</th>
+                            <th class="date-column">Date Added</th>
+                            <th class="actions-column">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            `;
+        }
+        
+        const tableBody = bookList.querySelector('tbody');
+        tableBody.innerHTML = '';
         
         if (booksToRender.length === 0) {
             logDebug('Render', 'No books to display');
-            bookList.innerHTML = '<div class="no-books">No books found. Try scanning your bookshelf!</div>';
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="no-books">No books found. Try scanning your bookshelf!</td>
+                </tr>
+            `;
             return;
         }
         
         booksToRender.forEach(book => {
-            const bookCard = document.createElement('div');
-            bookCard.className = 'book-card';
-            bookCard.dataset.id = book.id; // Store book ID in dataset for deletion
+            const row = document.createElement('tr');
+            row.className = 'book-row';
+            row.dataset.id = book.id; // Store book ID in dataset for deletion
             
             const dateAdded = new Date(book.date_added).toLocaleDateString();
             
-            bookCard.innerHTML = `
-                <button class="delete-btn" data-id="${book.id}">✕</button>
-                <h3 class="book-title">${book.title}</h3>
-                <div class="book-author">by ${book.author}</div>
-                <div class="book-date">Added on ${dateAdded}</div>
+            row.innerHTML = `
+                <td class="book-title">${book.title}</td>
+                <td class="book-author">${book.author}</td>
+                <td class="book-date">${dateAdded}</td>
+                <td class="book-actions">
+                    <button class="delete-btn" data-id="${book.id}">Delete</button>
+                </td>
             `;
             
             // Add event listener to the delete button
-            const deleteBtn = bookCard.querySelector('.delete-btn');
+            const deleteBtn = row.querySelector('.delete-btn');
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent event bubbling
                 confirmDeleteBook(book.id, book.title);
             });
             
-            bookList.appendChild(bookCard);
+            tableBody.appendChild(row);
         });
     }
     
@@ -459,11 +484,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update book count
             updateBookCount(books.length);
             
-            // Remove book card from UI
-            const bookCard = document.querySelector(`.book-card[data-id="${bookId}"]`);
-            if (bookCard) {
-                bookCard.remove();
-                logDebug('Delete', 'Book card removed from UI');
+            // Remove book row from UI
+            const bookRow = document.querySelector(`.book-row[data-id="${bookId}"]`);
+            if (bookRow) {
+                bookRow.remove();
+                logDebug('Delete', 'Book row removed from UI');
             }
             
             // Show success message
@@ -472,7 +497,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // If no books left, show the "no books" message
             if (books.length === 0) {
                 logDebug('Delete', 'No books remaining, showing "no books" message');
-                bookList.innerHTML = '<div class="no-books">No books found. Try scanning your bookshelf!</div>';
+                const tableBody = bookList.querySelector('tbody');
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="no-books">No books found. Try scanning your bookshelf!</td>
+                    </tr>
+                `;
             }
             
         } catch (error) {
@@ -563,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     bookCount: books.length,
                     csrfToken: csrfToken ? 'Present (hidden)' : 'Missing',
                     elements: {
-                        bookListEmpty: !bookList.children.length,
+                        bookListEmpty: !bookList.querySelector('tbody').children.length,
                         statusVisible: !!statusDiv.textContent,
                         loaderVisible: loader.style.display !== 'none'
                     }
