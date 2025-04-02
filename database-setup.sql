@@ -11,5 +11,13 @@ CREATE TABLE books (
 -- Optional: Add a unique constraint to prevent duplicates
 -- ALTER TABLE books ADD CONSTRAINT UQ_books_title_author UNIQUE (title, author);
 -- Optional: Create an index for faster searches
+
+-- CREATE TABLE user_scans (
+--     id INT IDENTITY(1,1) PRIMARY KEY,
+--     user_id NVARCHAR(255) NOT NULL,
+--     scan_time DATETIME DEFAULT GETDATE(),
+--     scan_file_name NVARCHAR(255) NULL,
+--     scan_status NVARCHAR(50) DEFAULT 'completed'
+-- );
 CREATE INDEX IX_books_title ON books(title);
 CREATE INDEX IX_books_author ON books(author);
