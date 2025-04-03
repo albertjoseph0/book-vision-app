@@ -150,10 +150,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message || result.error || 'Failed to process image');
             }
             
-            // Reload books after successful scan
-            logDebug('Upload', 'Scan successful, reloading books');
-            await fetchBooks(); // Will update book count through fetchBooks()
-            showStatus(`Success! ${result.added || 'New'} books added.`, 'success');
+            // Check if this was a non-book image
+            if (result.nonBookImage) {
+                logDebug('Upload', 'No books detected in the image');
+                showStatus(result.message || 'No books detected in the image. Please try again with a clearer photo of your bookshelf.', 'warning');
+            } else {
+                // Reload books after successful scan
+                logDebug('Upload', 'Scan successful, reloading books');
+                await fetchBooks(); // Will update book count through fetchBooks()
+                showStatus(`Success! ${result.added || 'New'} books added.`, 'success');
+            }
         } catch (error) {
             console.error('Error processing image:', error);
             showStatus(error.message || 'Error processing image', 'error');

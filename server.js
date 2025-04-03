@@ -543,49 +543,29 @@ function parseVisionResponse(responseData) {
         const content = responseData.choices[0].message.content;
         logInfo('Vision', 'Raw content from Vision API', { content });
         
-        // Since we requested JSON format, try to parse the content as JSON
-        let books = [];
-        
         try {
             // Parse the JSON string from the content
             const parsedContent = JSON.parse(content);
             logInfo('Vision', 'Successfully parsed JSON from Vision API', parsedContent);
             
-            // Check if the response contains a books array
-            if (Array.isArray(parsedContent.books)) {
-                books = parsedContent.books;
-                logInfo('Vision', 'Found books array in response', { count: books.length });
-            } 
-            // Or if the response itself is an array
-            else if (Array.isArray(parsedContent)) {
-                books = parsedContent;
-                logInfo('Vision', 'Response is an array of books', { count: books.length });
-            } else {
-                logInfo('Vision', 'Unexpected response structure', parsedContent);
-            }
+            // Get the books array - either directly if it's an array or from books property
+            let books = Array.isArray(parsedContent) ? parsedContent : 
+                        (Array.isArray(parsedContent.books) ? parsedContent.books : []);
             
-            // Log the raw books data before filtering
-            logInfo('Vision', 'Books before filtering', books);
+            logInfo('Vision', 'Books extracted from response', { count: books.length });
             
-            // Filter to ensure each book has both title and author
+            // Filter out any invalid entries (should have at least title or author)
             books = books.filter(book => 
                 book && 
                 typeof book === 'object' && 
-                typeof book.title === 'string' && 
-                typeof book.author === 'string' &&
-                book.title.trim() !== '' && 
-                book.author.trim() !== ''
+                ((book.title && typeof book.title === 'string') || 
+                 (book.author && typeof book.author === 'string'))
             );
             
-            logInfo('Vision', 'Books after filtering', { 
-                count: books.length,
-                books: books
-            });
-            
-            // Standardize the format to ensure only title and author are included
+            // Ensure title and author properties exist and are trimmed
             books = books.map(book => ({
-                title: book.title.trim(),
-                author: book.author.trim()
+                title: (book.title && typeof book.title === 'string') ? book.title.trim() : 'Unknown Title',
+                author: (book.author && typeof book.author === 'string') ? book.author.trim() : 'Unknown Author'
             }));
             
             // Remove duplicates
@@ -753,7 +733,7 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
                     content: [
                         {
                             type: "text",
-                            text: "You are a book identification expert. Identify all visible book titles and authors in the image. Respond in JSON format with an array of books containing title and author fields."
+                            text: "You are a book identification expert. Given an image input, identify all visible book titles and authors. Respond in JSON format with an array of books, each containing 'title' and 'author' fields. If only the title or author is visible, include what’s identifiable. If no books are identified or the image cannot be processed, return an empty array."
                         },
                         {
                             type: "image_url",
@@ -793,12 +773,13 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
         if (books.length === 0) {
             logInfo('API', 'No books detected in the image');
             
-            // Record the scan attempt even if no books were found
-            await recordSuccessfulScan(req.user.id, req.file.originalname || 'unnamed_file');
+            // Don't count this against the user's rate limit - it's likely not a bookshelf
+            // Note: We skip recordSuccessfulScan here
             
             return res.status(200).json({ 
-                message: 'No books detected in the image', 
+                message: 'No books detected in the image. Please try again with a clearer photo of your bookshelf.', 
                 added: 0,
+                nonBookImage: true, // Flag for the frontend to identify non-book images
                 csrfToken: req.csrfToken() // Send a new token for the next operation
             });
         }

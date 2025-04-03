@@ -578,3 +578,9 @@ button:hover {
         background: var(--background);
     }
 }
+
+.status.warning {
+    background-color: #FF0000;
+    color: var(--background);
+    border: none;
+}
