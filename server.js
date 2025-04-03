@@ -746,14 +746,14 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
         
         // Prepare OpenAI Vision API request
         const requestData = {
-            model: "gpt-4o",
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "user",
                     content: [
                         {
                             type: "text",
-                            text: "Identify all books visible in this image. Return the result as a JSON array of objects, where each object contains ONLY 'title' and 'author' properties. Example format: [{\"title\": \"The Great Gatsby\", \"author\": \"F. Scott Fitzgerald\"}]. Only include books you can clearly see and identify."
+                            text: "You are a book identification expert. Identify all visible book titles and authors in the image. Respond in JSON format with an array of books containing title and author fields."
                         },
                         {
                             type: "image_url",
