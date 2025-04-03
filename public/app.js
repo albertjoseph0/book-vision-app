@@ -229,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <th class="title-column">Title</th>
                             <th class="author-column">Author</th>
+                            <th class="isbn-column">ISBN</th>
                             <th class="date-column">Date Added</th>
                             <th class="actions-column">Actions</th>
                         </tr>
@@ -245,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logDebug('Render', 'No books to display');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="no-books">No books found. Try scanning your bookshelf!</td>
+                    <td colspan="5" class="no-books">No books found. Try scanning your bookshelf!</td>
                 </tr>
             `;
             return;
@@ -257,10 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
             row.dataset.id = book.id; // Store book ID in dataset for deletion
             
             const dateAdded = new Date(book.date_added).toLocaleDateString();
+            const isbnValue = book.isbn || 'N/A';
             
             row.innerHTML = `
                 <td class="book-title">${book.title}</td>
                 <td class="book-author">${book.author}</td>
+                <td class="book-isbn">${isbnValue}</td>
                 <td class="book-date">${dateAdded}</td>
                 <td class="book-actions">
                     <button class="delete-btn" data-id="${book.id}">Delete</button>
@@ -500,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tableBody = bookList.querySelector('tbody');
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="no-books">No books found. Try scanning your bookshelf!</td>
+                        <td colspan="5" class="no-books">No books found. Try scanning your bookshelf!</td>
                     </tr>
                 `;
             }

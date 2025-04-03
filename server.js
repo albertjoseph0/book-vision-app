@@ -38,7 +38,7 @@ app.use((req, res, next) => {
         "style-src 'self' https://cdnjs.cloudflare.com https://accounts.google.com/gsi/style 'unsafe-inline'; " +
         "font-src 'self' https://cdnjs.cloudflare.com; " +
         "frame-src https://accounts.google.com/gsi/ 'self'; " +
-        "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com;"
+        "connect-src 'self' https://accounts.google.com/gsi/ https://api.openai.com https://www.googleapis.com;"
       );
     next();
   });
@@ -306,6 +306,89 @@ async function recordSuccessfulScan(userId, fileName = null) {
     }
 }
 
+// Function to fetch ISBN from Google Books API
+async function fetchISBN(title, author) {
+    try {
+        logInfo('GoogleBooks', 'Fetching ISBN for book', {
+            title: title,
+            author: author
+        });
+        
+        // Encode title and author for URL
+        const encodedTitle = encodeURIComponent(title);
+        const encodedAuthor = encodeURIComponent(author);
+        
+        // Construct Google Books API URL
+        const url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodedTitle}+inauthor:${encodedAuthor}&maxResults=1`;
+        
+        logInfo('GoogleBooks', 'Calling Google Books API', { url });
+        
+        // Make request to Google Books API
+        const response = await axios.get(url);
+        
+        logInfo('GoogleBooks', 'Google Books API response received', {
+            status: response.status,
+            itemCount: response.data.totalItems
+        });
+        
+        // Check if any books were found
+        if (response.data.totalItems === 0 || !response.data.items || !response.data.items[0]) {
+            logInfo('GoogleBooks', 'No books found in Google Books API', {
+                title,
+                author
+            });
+            return 'N/A';
+        }
+        
+        // Get the first book result
+        const book = response.data.items[0];
+        
+        // Extract ISBN-13 from industry identifiers if available
+        if (book.volumeInfo && 
+            book.volumeInfo.industryIdentifiers && 
+            Array.isArray(book.volumeInfo.industryIdentifiers)) {
+            
+            // Look for ISBN_13 specifically
+            const isbn13 = book.volumeInfo.industryIdentifiers.find(
+                id => id.type === 'ISBN_13'
+            );
+            
+            if (isbn13 && isbn13.identifier) {
+                logInfo('GoogleBooks', 'ISBN-13 found', {
+                    isbn: isbn13.identifier,
+                    title,
+                    author
+                });
+                return isbn13.identifier;
+            }
+            
+            // If no ISBN-13, try ISBN_10
+            const isbn10 = book.volumeInfo.industryIdentifiers.find(
+                id => id.type === 'ISBN_10'
+            );
+            
+            if (isbn10 && isbn10.identifier) {
+                logInfo('GoogleBooks', 'ISBN-10 found (no ISBN-13 available)', {
+                    isbn: isbn10.identifier,
+                    title,
+                    author
+                });
+                return isbn10.identifier;
+            }
+        }
+        
+        logInfo('GoogleBooks', 'No ISBN found in Google Books API response', {
+            title,
+            author
+        });
+        return 'N/A';
+        
+    } catch (error) {
+        logError('GoogleBooks', `Error fetching ISBN for "${title}" by ${author}`, error);
+        return 'N/A';
+    }
+}
+
 // Error handler for CSRF errors
 app.use(function (err, req, res, next) {
     if (err.code !== 'EBADCSRFTOKEN') return next(err);
@@ -397,7 +480,7 @@ async function verifyDatabaseSchema() {
         logInfo('Database', 'Found columns in books table', columns);
         
         // Check for required columns
-        const requiredColumns = ['id', 'title', 'author', 'date_added', 'user_id', 'user_email'];
+        const requiredColumns = ['id', 'title', 'author', 'date_added', 'user_id', 'user_email', 'isbn'];
         const missingColumns = requiredColumns.filter(col => !columns.includes(col));
         
         // Check if the user_scans table exists
@@ -556,7 +639,7 @@ app.get('/books', requireAuth, csrfProtection, async (req, res) => {
         
         // User is authenticated (we know this because of requireAuth middleware)
         query = `
-            SELECT id, title, author, date_added, user_email 
+            SELECT id, title, author, date_added, user_email, isbn
             FROM books 
             WHERE user_id = @userId
             ORDER BY date_added DESC
@@ -738,7 +821,27 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
             userEmail: userEmail
         });
         
-        for (const book of books) {
+        // Get ISBNs for all books first (in parallel)
+        const bookPromises = books.map(async (book) => {
+            try {
+                // Add a small delay between API calls to avoid rate limiting
+                const isbn = await fetchISBN(book.title, book.author);
+                return { ...book, isbn };
+            } catch (error) {
+                logError('API', `Error fetching ISBN for book: ${book.title}`, error);
+                return { ...book, isbn: 'N/A' };
+            }
+        });
+        
+        // Wait for all ISBN lookups to complete
+        const booksWithISBN = await Promise.all(bookPromises);
+        
+        logInfo('API', 'Completed ISBN lookups for all books', {
+            booksWithISBN: booksWithISBN.map(b => ({ title: b.title, isbn: b.isbn }))
+        });
+        
+        // Now insert books with their ISBNs
+        for (const book of booksWithISBN) {
             // Skip invalid books (extra safety check)
             if (!book.title || !book.author) {
                 logInfo('API', 'Skipping invalid book', book);
@@ -746,15 +849,7 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
             }
             
             // Check if book already exists for this user
-            const existsQuery = 'SELECT COUNT(*) as count FROM books WHERE title = @title AND author = @author AND user_id = @userId';
-            logInfo('API', 'Checking if book exists', {
-                query: existsQuery,
-                parameters: {
-                    title: book.title,
-                    author: book.author,
-                    userId: userId
-                }
-            });
+            const existsQuery = 'SELECT id FROM books WHERE title = @title AND author = @author AND user_id = @userId';
             
             const existsResult = await pool.request()
                 .input('title', sql.NVarChar, book.title)
@@ -762,24 +857,11 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
                 .input('userId', sql.NVarChar, userId)
                 .query(existsQuery);
             
-            logInfo('API', 'Book existence check result', {
-                book: book,
-                exists: existsResult.recordset[0].count > 0,
-                count: existsResult.recordset[0].count
-            });
+            const bookExists = existsResult.recordset.length > 0;
             
-            // If book doesn't exist for this user, add it
-            if (existsResult.recordset[0].count === 0) {
-                const insertQuery = 'INSERT INTO books (title, author, user_id, user_email, date_added) VALUES (@title, @author, @userId, @userEmail, GETDATE())';
-                logInfo('API', 'Inserting new book', {
-                    query: insertQuery,
-                    parameters: {
-                        title: book.title,
-                        author: book.author,
-                        userId: userId,
-                        userEmail: userEmail
-                    }
-                });
+            if (!bookExists) {
+                // If book doesn't exist, insert it with ISBN
+                const insertQuery = 'INSERT INTO books (title, author, user_id, user_email, date_added, isbn) VALUES (@title, @author, @userId, @userEmail, GETDATE(), @isbn)';
                 
                 try {
                     const insertResult = await pool.request()
@@ -787,6 +869,7 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
                         .input('author', sql.NVarChar, book.author)
                         .input('userId', sql.NVarChar, userId)
                         .input('userEmail', sql.NVarChar, userEmail)
+                        .input('isbn', sql.NVarChar, book.isbn)
                         .query(insertQuery);
                     
                     logInfo('API', 'Book insert result', {
@@ -798,6 +881,26 @@ app.post('/scan', requireAuth, dbScanRateLimiter, csrfProtection, upload.single(
                 } catch (insertError) {
                     logError('API', `Error inserting book: ${book.title} by ${book.author}`, insertError);
                 }
+            } else {
+                // Book exists, update its ISBN if needed
+                const existingBookId = existsResult.recordset[0].id;
+                
+                // Update ISBN if it's not already set
+                const updateQuery = `
+                    UPDATE books 
+                    SET isbn = @isbn 
+                    WHERE id = @id AND (isbn IS NULL OR isbn = 'N/A')
+                `;
+                
+                await pool.request()
+                    .input('isbn', sql.NVarChar, book.isbn)
+                    .input('id', sql.Int, existingBookId)
+                    .query(updateQuery);
+                
+                logInfo('API', 'Updated existing book ISBN', {
+                    bookId: existingBookId,
+                    isbn: book.isbn
+                });
             }
         }
         
@@ -952,6 +1055,25 @@ verifyDatabaseSchema()
                 })
                 .catch(err => {
                     console.error('Failed to create user_scans table:', err);
+                });
+            }
+            
+            // Check if ISBN column exists, add it if needed
+            if (result.missingBooksColumns.includes('isbn')) {
+                console.error('Missing isbn column in books table - attempting to add it');
+                
+                // Add the ISBN column
+                getDbPool().then(pool => {
+                    return pool.request().query(`
+                        ALTER TABLE books ADD isbn NVARCHAR(20);
+                        CREATE INDEX IX_books_isbn ON books(isbn);
+                    `);
+                })
+                .then(() => {
+                    console.log('Successfully added isbn column to books table');
+                })
+                .catch(err => {
+                    console.error('Failed to add isbn column:', err);
                 });
             }
         } else {

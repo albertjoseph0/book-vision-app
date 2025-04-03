@@ -517,3 +517,63 @@ button:hover {
     transform: translateY(-2px);
     box-shadow: 2px 2px 4px var(--shadow);
 }
+
+/* Add CSS for the ISBN column */
+.isbn-column {
+    width: 15%;
+}
+
+/* Update the other column widths to accommodate the new column */
+.title-column {
+    width: 30%;
+}
+
+.author-column {
+    width: 25%;
+}
+
+.date-column {
+    width: 15%;
+}
+
+.actions-column {
+    width: 15%;
+    text-align: center;
+}
+
+/* Style for the ISBN value */
+.book-isbn {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    font-family: monospace;
+    padding: 2px 4px;
+    background-color: rgba(248, 248, 242, 0.7);
+    border-radius: 3px;
+}
+
+/* Adjust responsive table for the new column */
+@media (max-width: 768px) {
+    .book-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .title-column, .author-column, .isbn-column, .date-column, .actions-column {
+        width: auto;
+    }
+    
+    .book-date, .book-isbn {
+        white-space: nowrap;
+    }
+    
+    /* Fix the issue with the "No books found" message column count */
+    .no-books {
+        /* Ensure this matches the new number of columns */
+        text-align: center;
+        padding: 40px 0;
+        color: var(--secondary-text);
+        font-style: italic;
+        font-size: 1.2rem;
+        background: var(--background);
+    }
+}
