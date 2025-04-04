@@ -11,7 +11,12 @@ const csrf = require('csurf'); // Added for CSRF protection
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+if (process.env.NODE_ENV === 'development') {
+    console.log('Running in development mode!');
+  } else {
+    console.log('Running in production mode!');
+  }
+  
 // Add comprehensive security headers
 app.use((req, res, next) => {
     // HSTS header - already implemented
