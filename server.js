@@ -6,7 +6,7 @@ const axios = require('axios');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const csrf = require('csurf'); // Added for CSRF protection
+const csrf = require('csurf'); // Added for CSRF protection 
 
 // Initialize Express app
 const app = express();
@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === 'development') {
   } else {
     console.log('Running in production mode!');
   }
-  
+
 // Add comprehensive security headers
 app.use((req, res, next) => {
     // HSTS header - already implemented
