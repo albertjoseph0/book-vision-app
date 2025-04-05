@@ -1,13 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const bookList = document.getElementById('bookList');
+    const bookGrid = document.getElementById('bookGrid');
     const scanBtn = document.getElementById('scanBtn');
     const photoUpload = document.getElementById('photoUpload');
     const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
     const sortSelect = document.getElementById('sortSelect');
     const statusDiv = document.getElementById('status');
     const loader = document.getElementById('loader');
     const bookCountElement = document.getElementById('bookCount');
+    
+    // View toggle elements
+    const tableViewBtn = document.getElementById('tableViewBtn');
+    const cardViewBtn = document.getElementById('cardViewBtn');
+    const tableView = document.getElementById('tableView');
+    const cardView = document.getElementById('cardView');
+    
+    // Scan feedback elements
+    const scanFeedback = document.getElementById('scanFeedback');
+    const scanCount = document.getElementById('scanCount');
+    const newScanBtn = document.getElementById('newScanBtn');
+    const viewBooksBtn = document.getElementById('viewBooksBtn');
     
     // Auth elements
     const signInButton = document.getElementById('signInButton');
@@ -21,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Data store
     let books = [];
     let csrfToken = ''; // Store CSRF token
+    let currentView = localStorage.getItem('bookViewPreference') || 'table'; // Default to table view
     
     // Get CSRF token from meta tag
     function getCsrfToken() {
@@ -48,18 +63,119 @@ document.addEventListener('DOMContentLoaded', () => {
         logDebug('BookCount', `Updated book count: ${count}`);
     }
     
+    // Function to show status messages with icons
+    function showStatus(message, type) {
+        logDebug('Status', `Showing status message: ${message} (${type})`);
+        
+        statusDiv.className = `status ${type}`;
+        
+        // Add appropriate icon based on message type
+        let icon = '';
+        switch(type) {
+            case 'success':
+                icon = '<i class="fas fa-check-circle"></i>';
+                break;
+            case 'error':
+                icon = '<i class="fas fa-exclamation-circle"></i>';
+                break;
+            case 'warning':
+                icon = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+            default:
+                icon = '<i class="fas fa-info-circle"></i>';
+        }
+        
+        statusDiv.innerHTML = `${icon} ${message}`;
+        
+        // Auto clear success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status';
+                logDebug('Status', 'Cleared success message');
+            }, 5000);
+        }
+    }
+    
+    // Function to switch between table and card views
+    function switchView(view) {
+        currentView = view;
+        
+        // Save preference to localStorage
+        localStorage.setItem('bookViewPreference', view);
+        
+        // Update view toggle buttons
+        tableViewBtn.classList.toggle('active', view === 'table');
+        cardViewBtn.classList.toggle('active', view === 'card');
+        
+        // Show/hide appropriate view container
+        tableView.classList.toggle('active', view === 'table');
+        cardView.classList.toggle('active', view === 'card');
+        
+        logDebug('View', `Switched to ${view} view`);
+    }
+    
+    // Function to show the scan feedback overlay
+    function showScanFeedback(booksAdded) {
+        scanCount.textContent = booksAdded;
+        scanFeedback.classList.add('active');
+        
+        // Add event listeners to the buttons
+        newScanBtn.addEventListener('click', () => {
+            scanFeedback.classList.remove('active');
+            photoUpload.click(); // Trigger new scan
+        }, { once: true });
+        
+        viewBooksBtn.addEventListener('click', () => {
+            scanFeedback.classList.remove('active');
+        }, { once: true });
+        
+        logDebug('ScanFeedback', `Showing scan feedback for ${booksAdded} books`);
+    }
+    
     // Event listeners
     scanBtn.addEventListener('click', () => photoUpload.click());
     photoUpload.addEventListener('change', uploadPhoto);
     searchInput.addEventListener('input', filterBooks);
+    clearSearchBtn.addEventListener('click', clearSearch);
     sortSelect.addEventListener('change', sortBooks);
+    
+    // View toggle event listeners
+    tableViewBtn.addEventListener('click', () => switchView('table'));
+    cardViewBtn.addEventListener('click', () => switchView('card'));
     
     // Initialize - fetch books and check auth status on page load
     logDebug('Init', 'Application initialized, fetching books and checking auth');
     fetchBooks();
     checkAuthStatus();
     
+    // Set initial view
+    switchView(currentView);
+    
+    // Setup keyboard navigation indicator
+    setupKeyboardNavigation();
+    
     // Functions
+    function setupKeyboardNavigation() {
+        // Add class to body when user is using keyboard navigation
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                document.body.classList.add('user-is-tabbing');
+            }
+        });
+        
+        // Remove class when user clicks with mouse
+        window.addEventListener('mousedown', () => {
+            document.body.classList.remove('user-is-tabbing');
+        });
+    }
+    
+    function clearSearch() {
+        searchInput.value = '';
+        renderBooks(books); // Reset to show all books
+        searchInput.focus();
+    }
+    
     async function fetchBooks() {
         logDebug('Books', 'Fetching books from server');
         
@@ -118,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Show loading state
         loader.style.display = 'block';
-        bookList.style.display = 'none';
         statusDiv.textContent = '';
         statusDiv.className = 'status';
         
@@ -158,7 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Reload books after successful scan
                 logDebug('Upload', 'Scan successful, reloading books');
                 await fetchBooks(); // Will update book count through fetchBooks()
-                showStatus(`Success! ${result.added || 'New'} books added.`, 'success');
+                
+                // Show scan feedback overlay instead of status message
+                showScanFeedback(result.added || 0);
             }
         } catch (error) {
             console.error('Error processing image:', error);
@@ -166,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // Reset loader and file input
             loader.style.display = 'none';
-            bookList.style.display = 'table'; // Updated to 'table' for the new layout
             photoUpload.value = '';
             logDebug('Upload', 'Upload process completed');
         }
@@ -183,7 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const filtered = books.filter(book => 
             book.title.toLowerCase().includes(searchTerm) || 
-            book.author.toLowerCase().includes(searchTerm)
+            book.author.toLowerCase().includes(searchTerm) ||
+            (book.isbn && book.isbn.toLowerCase().includes(searchTerm))
         );
         
         logDebug('Filter', `Found ${filtered.length} books matching filter`);
@@ -220,13 +337,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         renderBooks(sorted);
+    }
+    
+    // Function to create book cards for card view
+    function createBookCard(book) {
+        const dateAdded = new Date(book.date_added).toLocaleDateString();
+        const isbnValue = book.isbn || 'N/A';
         
-        // Note: We don't update the book count here as it should always show total books
+        const card = document.createElement('article');
+        card.className = 'book-card';
+        card.dataset.id = book.id;
+        
+        // Generate a random background color based on book title (for visual variety)
+        const colors = [
+            '#2E5C8A', '#3A74AD', '#4B88C5', '#5E9BD8', '#7FB1E7', 
+            '#2C4A6B', '#1A3A5C', '#0D2947', '#3B648F', '#2A537A'
+        ];
+        const colorIndex = book.title.charCodeAt(0) % colors.length;
+        const coverColor = colors[colorIndex];
+        
+        // Create card content with cover, info, and actions
+        card.innerHTML = `
+            <div class="book-card-cover" style="background-color: ${coverColor}">
+                ${book.title.substring(0, 2).toUpperCase()}
+            </div>
+            <div class="book-card-info">
+                <h3 class="book-card-title">${book.title}</h3>
+                <p class="book-card-author">by ${book.author}</p>
+                <div class="book-card-details">
+                    <div class="book-card-isbn">
+                        <i class="fas fa-barcode"></i> ${isbnValue}
+                    </div>
+                    <div class="book-card-date">
+                        <i class="fas fa-calendar-alt"></i> Added ${dateAdded}
+                    </div>
+                </div>
+            </div>
+            <div class="book-card-actions">
+                <button class="delete-btn" data-id="${book.id}">
+                    <i class="fas fa-trash-alt"></i> Remove
+                </button>
+            </div>
+        `;
+        
+        // Add event listener to the delete button
+        const deleteBtn = card.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent event bubbling
+            confirmDeleteBook(book.id, book.title);
+        });
+        
+        return card;
     }
     
     function renderBooks(booksToRender) {
         logDebug('Render', `Rendering ${booksToRender.length} books`);
         
+        // Render for table view
+        renderTableView(booksToRender);
+        
+        // Render for card view
+        renderCardView(booksToRender);
+    }
+    
+    function renderTableView(booksToRender) {
         // Create a table if it doesn't exist already
         if (!bookList.querySelector('table')) {
             bookList.innerHTML = `
@@ -249,10 +423,13 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = '';
         
         if (booksToRender.length === 0) {
-            logDebug('Render', 'No books to display');
+            logDebug('Render', 'No books to display in table view');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="no-books">No books found. Try scanning your bookshelf!</td>
+                    <td colspan="5" class="no-books">
+                        <i class="fas fa-books"></i>
+                        No books found. Try scanning your bookshelf!
+                    </td>
                 </tr>
             `;
             return;
@@ -272,7 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="book-isbn">${isbnValue}</td>
                 <td class="book-date">${dateAdded}</td>
                 <td class="book-actions">
-                    <button class="delete-btn" data-id="${book.id}">Delete</button>
+                    <button class="delete-btn" data-id="${book.id}" aria-label="Delete ${book.title}">
+                        <i class="fas fa-trash-alt"></i> Remove
+                    </button>
                 </td>
             `;
             
@@ -287,20 +466,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function showStatus(message, type) {
-        logDebug('Status', `Showing status message: ${message} (${type})`);
+    function renderCardView(booksToRender) {
+        bookGrid.innerHTML = '';
         
-        statusDiv.textContent = message;
-        statusDiv.className = `status ${type}`;
-        
-        // Auto clear success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                statusDiv.textContent = '';
-                statusDiv.className = 'status';
-                logDebug('Status', 'Cleared success message');
-            }, 5000);
+        if (booksToRender.length === 0) {
+            logDebug('Render', 'No books to display in card view');
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'no-books';
+            emptyMessage.innerHTML = `
+                <i class="fas fa-books"></i>
+                No books found. Try scanning your bookshelf!
+            `;
+            bookGrid.appendChild(emptyMessage);
+            return;
         }
+        
+        booksToRender.forEach(book => {
+            const card = createBookCard(book);
+            bookGrid.appendChild(card);
+        });
     }
     
     // Authentication functions - Simplified to use Azure App Service authentication
@@ -397,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logDebug('Auth', 'Profile picture set');
         } else {
             // Use a default avatar
-            profilePicture.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23bbb"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
+            profilePicture.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23D2674E"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>';
             logDebug('Auth', 'Using default profile picture');
         }
     }
@@ -452,9 +636,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // Add keyboard support for accessibility
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            } else if (e.key === 'Enter' && document.activeElement === confirmBtn) {
+                deleteBook(bookId);
+                closeModal();
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        
         // Helper function to close modal
         function closeModal() {
             confirmationModal.style.display = 'none';
+            window.removeEventListener('keydown', handleKeyDown);
             logDebug('Delete', 'Closed confirmation modal');
         }
     }
@@ -493,26 +690,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update book count
             updateBookCount(books.length);
             
-            // Remove book row from UI
-            const bookRow = document.querySelector(`.book-row[data-id="${bookId}"]`);
-            if (bookRow) {
-                bookRow.remove();
-                logDebug('Delete', 'Book row removed from UI');
-            }
+            // Update both views
+            renderBooks(books);
             
             // Show success message
             showStatus('Book deleted successfully', 'success');
-            
-            // If no books left, show the "no books" message
-            if (books.length === 0) {
-                logDebug('Delete', 'No books remaining, showing "no books" message');
-                const tableBody = bookList.querySelector('tbody');
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="no-books">No books found. Try scanning your bookshelf!</td>
-                    </tr>
-                `;
-            }
             
         } catch (error) {
             console.error('Error deleting book:', error);
@@ -550,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Check authentication status
-            console.log('%c👤 Authentication Status Check', 'font-size: 14px; font-weight: bold; color: #704214;');
+            console.log('%c👤 Authentication Status Check', 'font-size: 14px; font-weight: bold; color: #D2674E;');
             const authResponse = await fetch('/api/auth-status', {
                 credentials: 'include',
                 headers: {
@@ -568,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(authStatus);
             
             // Check Azure's built-in auth endpoint
-            console.log('%c🔐 Azure Auth Endpoint', 'font-size: 14px; font-weight: bold; color: #704214;');
+            console.log('%c🔐 Azure Auth Endpoint', 'font-size: 14px; font-weight: bold; color: #D2674E;');
             const azureAuthResponse = await fetch('/.auth/me', {
                 credentials: 'include'
             });
@@ -576,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(azureAuthData);
             
             // Check database connection and schema
-            console.log('%c📊 Book Vision App Diagnostics', 'font-size: 16px; font-weight: bold; color: #704214;');
+            console.log('%c📊 Book Vision App Diagnostics', 'font-size: 16px; font-weight: bold; color: #D2674E;');
             const response = await fetch('/api/diagnostics', {
                 credentials: 'include',
                 headers: {
@@ -598,11 +780,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 azureAuth: azureAuthData,
                 diagnostics: diagnosticData,
                 clientState: {
-                    books: books,
-                    bookCount: books.length,
+                    books: books.length,
+                    currentView: currentView,
                     csrfToken: csrfToken ? 'Present (hidden)' : 'Missing',
                     elements: {
-                        bookListEmpty: !bookList.querySelector('tbody').children.length,
                         statusVisible: !!statusDiv.textContent,
                         loaderVisible: loader.style.display !== 'none'
                     }
@@ -628,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return success ? 'CSRF token refresh completed' : 'CSRF token refresh failed';
     };
     
-    console.log('Book Vision App initialized. For troubleshooting:');
+    console.log('ShelfSmart App initialized. For troubleshooting:');
     console.log('- Run window.runDiagnostics() for detailed diagnostic info');
     console.log('- Run window.refreshAuth() to refresh authentication state');
     console.log('- Run window.refreshCsrf() to refresh CSRF token');

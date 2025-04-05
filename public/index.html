@@ -9,68 +9,122 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>My Literary Collection</h1>
-            <div class="actions">
-                <button id="scanBtn">Capture Bookshelf</button>
-                <input type="file" id="photoUpload" accept="image/*" style="display: none;">
-                <div id="status" class="status"></div>
-                
-                <!-- Auth UI Components -->
-                <div id="authSection">
-                    <!-- Sign-in button (shown when not authenticated) -->
-                    <a href="/.auth/login/google?post_login_redirect_uri=/app" class="auth-button" id="signInButton">
-                        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" class="auth-icon">
-                        Enter with Google
-                    </a>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">My Literary Collection</h1>
+                <div class="header-actions">
+                    <button id="scanBtn" class="btn btn-primary" aria-label="Capture your bookshelf">
+                        <i class="fas fa-camera"></i> Capture Bookshelf
+                    </button>
+                    <input type="file" id="photoUpload" accept="image/*" aria-hidden="true" tabindex="-1">
                     
-                    <!-- User profile (shown when authenticated) -->
-                    <div class="user-profile" id="userProfile" style="display: none;">
-                        <div class="profile-info">
-                            <img src="" alt="Profile" class="profile-picture" id="profilePicture">
-                            <span id="userName">User Name</span>
-                        </div>
-                        <a href="/.auth/logout?post_logout_redirect_uri=/app" class="logout-button">
-                            Sign Out
+                    <!-- Auth UI Components -->
+                    <div id="authSection" class="auth-section">
+                        <!-- Sign-in button (shown when not authenticated) -->
+                        <a href="/.auth/login/google?post_login_redirect_uri=/app" class="auth-button" id="signInButton">
+                            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" class="auth-icon">
+                            Enter with Google
                         </a>
+                        
+                        <!-- User profile (shown when authenticated) -->
+                        <div class="user-profile" id="userProfile" style="display: none;">
+                            <div class="profile-info">
+                                <img src="" alt="Profile" class="profile-picture" id="profilePicture">
+                                <span id="userName">User Name</span>
+                            </div>
+                            <a href="/.auth/logout?post_logout_redirect_uri=/app" class="logout-button">
+                                <i class="fas fa-sign-out-alt"></i> Sign Out
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <div id="status" class="status"></div>
         </header>
         
-        <div class="controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Browse titles, authors, or subjects...">
+        <div class="controls-container">
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search by title, author, or ISBN...">
+                    <button id="clearSearch" class="clear-search" aria-label="Clear search">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
             
-            <!-- Book count element -->
-            <div class="book-count">
-                <span id="bookCount">0 Books</span>
-            </div>
-            
-            <div class="sort-options">
-                <label for="sortSelect">Arrange by:</label>
-                <select id="sortSelect">
-                    <option value="title-asc">Title (Alphabetical)</option>
-                    <option value="title-desc">Title (Reverse)</option>
-                    <option value="author-asc">Author (Alphabetical)</option>
-                    <option value="author-desc">Author (Reverse)</option>
-                    <option value="date-desc">Acquisition (Recent First)</option>
-                    <option value="date-asc">Acquisition (Earliest First)</option>
-                </select>
+            <div class="controls-actions">
+                <!-- View toggle buttons -->
+                <div class="view-toggle">
+                    <button id="tableViewBtn" class="view-btn active" aria-label="Table view">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button id="cardViewBtn" class="view-btn" aria-label="Card view">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+                
+                <!-- Book count element -->
+                <div class="book-count">
+                    <i class="fas fa-book"></i>
+                    <span id="bookCount">0 Books</span>
+                </div>
+                
+                <div class="sort-options">
+                    <label for="sortSelect">Sort by:</label>
+                    <select id="sortSelect" aria-label="Sort books by">
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                        <option value="author-asc">Author (A-Z)</option>
+                        <option value="author-desc">Author (Z-A)</option>
+                        <option value="date-desc">Recently Added</option>
+                        <option value="date-asc">Oldest First</option>
+                    </select>
+                </div>
             </div>
         </div>
         
         <div class="book-loader" id="loader" style="display: none;">
             <div class="spinner"></div>
-            <p>Cataloguing your distinguished collection...</p>
+            <p>Analyzing your bookshelf...</p>
         </div>
         
-        <!-- Changed from div to table layout -->
-        <main id="bookList" class="book-list">
-            <!-- Table will be generated via JavaScript -->
-        </main>
+        <!-- Book display container -->
+        <div class="book-display-container">
+            <!-- Table View (default) -->
+            <div id="tableView" class="view-container active">
+                <div id="bookList" class="book-list">
+                    <!-- Table will be generated via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Card View (alternative) -->
+            <div id="cardView" class="view-container">
+                <div id="bookGrid" class="book-grid">
+                    <!-- Cards will be generated via JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scan feedback overlay -->
+        <div id="scanFeedback" class="scan-feedback">
+            <div class="scan-feedback-content">
+                <div class="result-count">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="scanCount">0</span> Books Identified
+                </div>
+                <div class="scan-actions">
+                    <button id="newScanBtn" class="btn btn-secondary">
+                        <i class="fas fa-camera"></i> New Scan
+                    </button>
+                    <button id="viewBooksBtn" class="btn btn-primary">
+                        <i class="fas fa-books"></i> View Collection
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>
