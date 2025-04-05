@@ -313,13 +313,14 @@ section {
 .nav-links {
     display: flex;
     align-items: center;
+    gap: 30px;  /* Use consistent gap spacing instead of margins */
 }
 
 .nav-links a {
-    margin-left: 30px;
     color: var(--secondary-text);
     font-weight: 500;
     position: relative;
+    margin-left: 0;  /* Remove individual margins */
 }
 
 .nav-links a.btn {
@@ -917,6 +918,7 @@ section {
 .auth-section {
     display: flex;
     align-items: center;
+    /* No margin needed - gap is handled by parent container */
 }
 
 .user-profile {
@@ -1630,6 +1632,7 @@ section {
         transition: all 0.3s ease;
         border-bottom: 1px solid var(--divider);
         z-index: 100;
+        gap: 0; /* Reset gap for mobile view */
     }
     
     .nav-links.active {
@@ -1639,6 +1642,8 @@ section {
     .nav-links a {
         margin: 15px 0;
     }
+    
+    /* Auth section styling is now handled by the parent container's gap */
     
     .hero-content h1 {
         font-size: 2.5rem;
@@ -1766,4 +1771,21 @@ section {
     .book-table .author-column {
         display: none;
     }
+}
+
+/* Logo styling */
+.site-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo h1 {
+    margin: 0;
 }

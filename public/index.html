@@ -7,6 +7,8 @@
     <!-- CSRF_TOKEN --> <!-- This will be replaced by the server with a real CSRF token -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Added favicon for browser tab -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E5C8A'%3E%3Cpath d='M21 4H3c-1.1 0-2 .9-2 2v13c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM3 19V6h8v13H3zm18 0h-8V6h8v13zm-7-9.5h6V11h-6zm0 2.5h6v1.5h-6zm0 2.5h6V16h-6z'/%3E%3C/svg%3E">
 </head>
 <body>
     <!-- Header from landing page -->
@@ -14,35 +16,11 @@
         <div class="container">
             <nav class="nav">
                 <div class="logo">
-                    <h1>ShelfSmart</h1>
+                    <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E5C8A'%3E%3Cpath d='M21 4H3c-1.1 0-2 .9-2 2v13c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM3 19V6h8v13H3zm18 0h-8V6h8v13zm-7-9.5h6V11h-6zm0 2.5h6v1.5h-6zm0 2.5h6V16h-6z'/%3E%3C/svg%3E" alt="ShelfSmart Logo" class="site-logo">
+                    <h1>ShelfSmart</h1>                
                 </div>
                 <div class="nav-links">
                     <a href="/">Home</a>
-                    <a href="/app">My Collection</a>
-                    <a href="/#features">Features</a>
-                    <a href="/#how-it-works">How It Works</a>
-                    <a href="/.auth/logout?post_logout_redirect_uri=/app" class="logout-button">
-                        <i class="fas fa-sign-out-alt"></i> Sign Out
-                    </a>
-                </div>
-                <button class="menu-toggle" id="menuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Original app content -->
-    <div class="app-container">
-        <header class="app-header">
-            <div class="header-content">
-                <h1 class="app-title">My Literary Collection</h1>
-                <div class="header-actions">
-                    <button id="scanBtn" class="btn btn-primary" aria-label="Capture your bookshelf">
-                        <i class="fas fa-camera"></i> Capture Bookshelf
-                    </button>
-                    <input type="file" id="photoUpload" accept="image/*" aria-hidden="true" tabindex="-1">
-                    
                     <!-- Auth UI Components -->
                     <div id="authSection" class="auth-section">
                         <!-- Sign-in button (shown when not authenticated) -->
@@ -62,6 +40,24 @@
                             </a>
                         </div>
                     </div>
+                </div>
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Original app content -->
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">My Literary Collection</h1>
+                <div class="header-actions">
+                    <button id="scanBtn" class="btn btn-primary" aria-label="Capture your bookshelf">
+                        <i class="fas fa-camera"></i> Capture Bookshelf
+                    </button>
+                    <input type="file" id="photoUpload" accept="image/*" aria-hidden="true" tabindex="-1">     
                 </div>
             </div>
             
