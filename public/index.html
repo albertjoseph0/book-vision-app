@@ -9,6 +9,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
+    <!-- Header from landing page -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <h1>ShelfSmart</h1>
+                </div>
+                <div class="nav-links">
+                    <a href="/">Home</a>
+                    <a href="/app">My Collection</a>
+                    <a href="/#features">Features</a>
+                    <a href="/#how-it-works">How It Works</a>
+                    <a href="/.auth/logout?post_logout_redirect_uri=/app" class="logout-button">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </a>
+                </div>
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Original app content -->
     <div class="app-container">
         <header class="app-header">
             <div class="header-content">
@@ -126,6 +150,64 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer from landing page -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>ShelfSmart</h2>
+                    <p>Your Digital Library Companion</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h3>Product</h3>
+                        <ul>
+                            <li><a href="/#features">Features</a></li>
+                            <li><a href="/#how-it-works">How It Works</a></li>
+                            <li><a href="/#pricing">Pricing</a></li>
+                            <li><a href="/app">My Collection</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Company</h3>
+                        <ul>
+                            <li><a href="/#about">About Us</a></li>
+                            <li><a href="/#blog">Blog</a></li>
+                            <li><a href="/#contact">Contact</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Legal</h3>
+                        <ul>
+                            <li><a href="/privacy">Privacy Policy</a></li>
+                            <li><a href="/terms">Terms of Service</a></li>
+                            <li><a href="/cookies">Cookie Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ShelfSmart. All rights reserved.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <script src="app.js"></script>
+    
+    <!-- Mobile menu toggle script from landing.html -->
+    <script>
+        // Mobile menu toggle
+        document.getElementById('menuToggle').addEventListener('click', function() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.classList.toggle('active');
+        });
+    </script>
 </body>
 </html>
